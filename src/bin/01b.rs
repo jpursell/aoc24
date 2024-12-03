@@ -1,6 +1,6 @@
 use counter::Counter;
 
-fn extract_lists(str:&str) -> [Vec<usize>;2] {
+fn extract_lists(str: &str) -> [Vec<usize>; 2] {
     let count = str.lines().count();
     let mut vecs = [Vec::with_capacity(count), Vec::with_capacity(count)];
     for line in str.lines() {
@@ -13,7 +13,7 @@ fn extract_lists(str:&str) -> [Vec<usize>;2] {
     vecs
 }
 
-fn process_lists(vecs: [Vec<usize>;2]) -> usize {
+fn process_lists(vecs: [Vec<usize>; 2]) -> usize {
     let counter = vecs[1].iter().collect::<Counter<_>>();
     let mut out = 0;
     for a in vecs[0].iter() {

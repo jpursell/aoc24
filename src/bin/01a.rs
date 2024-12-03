@@ -1,5 +1,4 @@
-
-fn extract_lists(str:&str) -> [Vec<u32>;2] {
+fn extract_lists(str: &str) -> [Vec<u32>; 2] {
     let count = str.lines().count();
     let mut vecs = [Vec::with_capacity(count), Vec::with_capacity(count)];
     for line in str.lines() {
@@ -12,7 +11,7 @@ fn extract_lists(str:&str) -> [Vec<u32>;2] {
     vecs
 }
 
-fn process_lists(mut vecs: [Vec<u32>;2]) -> u32 {
+fn process_lists(mut vecs: [Vec<u32>; 2]) -> u32 {
     vecs[0].sort();
     vecs[1].sort();
     let mut diff = 0;
