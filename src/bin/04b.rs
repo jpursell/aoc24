@@ -25,8 +25,7 @@ fn extract(str: &str) -> Array2<Token> {
             }
         }
     }
-    let tokens = Array2::from_shape_vec(shape, tokens).unwrap();
-    tokens
+    Array2::from_shape_vec(shape, tokens).unwrap()
 }
 
 fn check_location(tokens: ArrayView2<Token>, i: usize, j: usize) -> bool {
@@ -75,10 +74,8 @@ fn process(tokens: ArrayView2<Token>) -> usize {
         if i == 0 || j == 0 || i == shape[0] - 1 || j == shape[1] - 1 {
             continue;
         }
-        if token == &Token::A {
-            if check_location(tokens, i, j) {
-                out += 1;
-            }
+        if token == &Token::A && check_location(tokens, i, j) {
+            out += 1;
         }
     }
     out
@@ -94,5 +91,6 @@ fn main() {
     let out = include_str!("04.txt");
     let out = extract(out);
     let out = process(out.view());
+    assert_eq!(out, 1815);
     println!("{out}");
 }
