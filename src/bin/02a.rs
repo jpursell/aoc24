@@ -41,8 +41,14 @@ fn process(vecs: Vec<Vec<usize>>) -> usize {
     out
 }
 fn main() {
+    let out = include_str!("02_test.txt");
+    let out = extract(out);
+    let out = process(out);
+    assert_eq!(out, 2);
+
     let out = include_str!("02.txt");
     let out = extract(out);
     let out = process(out);
+    assert_eq!(out, 356);
     println!("{out:?}");
 }
