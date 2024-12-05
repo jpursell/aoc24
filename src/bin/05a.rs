@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, str::FromStr};
+use std::{
+    collections::{btree_map::Entry, BTreeMap},
+    str::FromStr,
+};
 
 #[derive(Debug)]
 struct Rule {
@@ -78,10 +81,10 @@ impl FromStr for Puzzle {
 
 impl Puzzle {
     fn process(&self) -> usize {
-        let mut ruleset = BTreeMap::new();
+        let mut ruleset: BTreeMap<&usize, Vec<&usize>> = BTreeMap::new();
         for Rule { left, right } in &self.rules {
-            if !ruleset.contains_key(&right) {
-                ruleset.insert(right, vec![left]);
+            if let Entry::Vacant(e) = ruleset.entry(right) {
+                e.insert(vec![left]);
             } else {
                 ruleset.get_mut(&right).unwrap().push(left);
             }
