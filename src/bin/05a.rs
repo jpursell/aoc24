@@ -1,5 +1,5 @@
 use std::{
-    collections::{btree_map::Entry, BTreeMap},
+    collections::{btree_map::Entry, BTreeMap, BTreeSet},
     str::FromStr,
 };
 
@@ -51,6 +51,23 @@ impl FromStr for Update {
         Ok(Update { pages })
     }
 }
+impl Update {
+    fn check(&self, ruleset: &Ruleset) -> bool {
+        let mut seen = BTreeSet::new();
+        for page in &self.pages {
+            if let Some(rights) = ruleset.rules.get(page) {
+                if seen.intersection(rights).count() > 0 {
+                    return false;
+                }
+            }
+            seen.insert(*page);
+        }
+        true
+    }
+    fn middle(&self) -> usize {
+        self.pages[(self.pages.len() - 1) / 2]
+    }
+}
 #[derive(Debug)]
 struct Puzzle {
     rules: Vec<Rule>,
@@ -79,24 +96,74 @@ impl FromStr for Puzzle {
     }
 }
 
-impl Puzzle {
-    fn process(&self) -> usize {
-        let mut ruleset: BTreeMap<&usize, Vec<&usize>> = BTreeMap::new();
-        for Rule { left, right } in &self.rules {
-            if let Entry::Vacant(e) = ruleset.entry(right) {
-                e.insert(vec![left]);
-            } else {
-                ruleset.get_mut(&right).unwrap().push(left);
+#[derive(Debug)]
+struct Ruleset {
+    rules: BTreeMap<usize, BTreeSet<usize>>,
+}
+impl Ruleset {
+    fn new(rules: &[Rule]) -> Self {
+        let mut ruleset: BTreeMap<usize, BTreeSet<usize>> = BTreeMap::new();
+        for Rule { left, right } in rules {
+            match ruleset.entry(*left) {
+                Entry::Vacant(e) => {
+                    e.insert(BTreeSet::from([*right]));
+                }
+                Entry::Occupied(mut e) => {
+                    e.get_mut().insert(*right);
+                }
             }
         }
-        dbg!(&ruleset);
-        0
+        Ruleset { rules: ruleset }
+    }
+}
+
+impl Puzzle {
+    fn process(&self) -> usize {
+        let mut out = 0;
+        let ruleset = Ruleset::new(&self.rules);
+        for update in &self.updates {
+            if update.check(&ruleset) {
+                out += update.middle();
+            }
+        }
+        out
     }
 }
 
 fn main() {
     let puzzle = include_str!("05_test.txt").parse::<Puzzle>().unwrap();
-    dbg!(&puzzle);
     let out = puzzle.process();
     assert_eq!(out, 143);
+
+    let puzzle = include_str!("05.txt").parse::<Puzzle>().unwrap();
+    let out = puzzle.process();
+    assert_eq!(out, 6034);
+    println!("{out}");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_check_fail() {
+        let rules = vec![Rule { left: 1, right: 2 }];
+        let ruleset = Ruleset::new(&rules);
+        let update = Update { pages: vec![2, 1] };
+        assert!(!update.check(&ruleset));
+    }
+    #[test]
+    fn test_check_pass() {
+        let rules = vec![Rule { left: 1, right: 2 }];
+        let ruleset = Ruleset::new(&rules);
+        let update = Update { pages: vec![1, 2] };
+        assert!(update.check(&ruleset));
+    }
+    #[test]
+    fn test_check_fail2() {
+        let rules = vec![Rule { left: 1, right: 2 }, Rule { left: 1, right: 3 }];
+        let ruleset = Ruleset::new(&rules);
+        let update = Update { pages: vec![3, 1] };
+        assert!(!update.check(&ruleset));
+    }
 }
