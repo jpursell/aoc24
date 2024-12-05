@@ -25,7 +25,7 @@ impl FromStr for Rule {
             return Err(());
         }
         let right = right.unwrap();
-        Ok(Rule{left, right})
+        Ok(Rule { left, right })
     }
 }
 #[derive(Debug)]
@@ -36,16 +36,16 @@ impl FromStr for Update {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let pages:Vec<&str> = s.split(",").collect();
+        let pages: Vec<&str> = s.split(",").collect();
         if pages.is_empty() {
-            return Err(())
+            return Err(());
         }
-        let pages = pages.iter().map(|p|p.parse::<usize>()).collect::<Vec<_>>();
-        if pages.iter().any(|p|p.is_err()) {
+        let pages = pages.iter().map(|p| p.parse::<usize>()).collect::<Vec<_>>();
+        if pages.iter().any(|p| p.is_err()) {
             return Err(());
         }
         let pages: Vec<usize> = pages.iter().map(|p| *p.as_ref().unwrap()).collect();
-        Ok(Update{pages})
+        Ok(Update { pages })
     }
 }
 #[derive(Debug)]
@@ -72,14 +72,14 @@ impl FromStr for Puzzle {
                 updates.push(line.parse::<Update>()?);
             }
         }
-        Ok(Puzzle{rules,updates})
+        Ok(Puzzle { rules, updates })
     }
 }
 
 impl Puzzle {
     fn process(&self) -> usize {
         let mut ruleset = BTreeMap::new();
-        for Rule{left, right} in &self.rules {
+        for Rule { left, right } in &self.rules {
             if !ruleset.contains_key(&right) {
                 ruleset.insert(right, vec![left]);
             } else {
@@ -91,30 +91,9 @@ impl Puzzle {
     }
 }
 
-// fn process(tokens: ArrayView2<Token>) -> usize {
-//     let mut out = 0;
-
-//     let shape = tokens.shape();
-//     for ((i, j), token) in tokens.indexed_iter() {
-//         if i == 0 || j == 0 || i == shape[0] - 1 || j == shape[1] - 1 {
-//             continue;
-//         }
-//         if token == &Token::A && check_location(tokens, i, j) {
-//             out += 1;
-//         }
-//     }
-//     out
-// }
-
 fn main() {
     let puzzle = include_str!("05_test.txt").parse::<Puzzle>().unwrap();
     dbg!(&puzzle);
     let out = puzzle.process();
     assert_eq!(out, 143);
-
-    // let out = include_str!("04.txt");
-    // let out = extract(out);
-    // let out = process(out.view());
-    // assert_eq!(out, 1815);
-    // println!("{out}");
 }
