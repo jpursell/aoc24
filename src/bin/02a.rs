@@ -13,17 +13,14 @@ fn extract(str: &str) -> Vec<Vec<usize>> {
     vecs
 }
 
-fn process_line(a: &Vec<usize>, increasing: bool) -> bool {
+fn process_line(a: &[usize], increasing: bool) -> bool {
     for chunk in a.windows(2) {
         let d = if increasing {
             chunk[1] as i64 - chunk[0] as i64
         } else {
             chunk[0] as i64 - chunk[1] as i64
         };
-        let ok = match d {
-            1 | 2 | 3 => true,
-            _ => false,
-        };
+        let ok = matches!(d, 1..=3);
         if !ok {
             return false;
         }
@@ -41,8 +38,14 @@ fn process(vecs: Vec<Vec<usize>>) -> usize {
     out
 }
 fn main() {
+    let out = include_str!("02_test.txt");
+    let out = extract(out);
+    let out = process(out);
+    assert_eq!(out, 2);
+
     let out = include_str!("02.txt");
     let out = extract(out);
     let out = process(out);
+    assert_eq!(out, 356);
     println!("{out:?}");
 }

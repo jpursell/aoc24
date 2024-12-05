@@ -25,8 +25,7 @@ fn extract(str: &str) -> Array2<Token> {
             }
         }
     }
-    let tokens = Array2::from_shape_vec(shape, tokens).unwrap();
-    tokens
+    Array2::from_shape_vec(shape, tokens).unwrap()
 }
 
 enum Direction {
@@ -120,5 +119,6 @@ fn main() {
     let out = include_str!("04.txt");
     let out = extract(out);
     let out = process(out.view());
+    assert_eq!(out, 2344);
     println!("{out}");
 }
