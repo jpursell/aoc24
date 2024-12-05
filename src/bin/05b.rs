@@ -163,7 +163,7 @@ fn main() {
 
     let puzzle = include_str!("05.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
-    // assert_eq!(out, 6034);
+    assert_eq!(out, 6305);
     println!("{out}");
 }
 
