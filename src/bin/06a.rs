@@ -112,8 +112,14 @@ impl Puzzle {
     }
     fn update(&self, position: [usize; 2], direction: Direction) -> ([usize; 2], Direction) {
         let shape = self.map.shape();
-        let new_position = update_position(position, direction, shape);
-        todo!();
+        let mut new_position = update_position(position, direction, shape);
+        let mut new_direction = direction;
+        todo!()
+        if new_position.is_none() || self.map[[new_position.unwrap()]] != Tok{
+            new_direction= rotate_right(&direction);
+            new_position = update_position(position, direction, shape);
+        }
+        (new_position.unwrap(), new_direction)
     }
 }
 
