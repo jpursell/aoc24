@@ -98,44 +98,55 @@ impl Puzzle {
         let mut position = self.position;
         let mut direction = self.direction;
         positions.insert(position);
-        let mut position_directions = BTreeSet::new();
-        position_directions.insert((position, direction));
-        loop {
-            let (position, direction) = self.update(position, direction);
-            if position_directions.contains(&(position, direction)) {
-                break;
-            }
+        while let Some((new_position, new_direction)) = self.update(position, direction) {
+            position = new_position;
+            direction = new_direction;
             positions.insert(position);
-            position_directions.insert((position, direction));
         }
         positions.len()
     }
-    fn update(&self, position: [usize; 2], direction: Direction) -> ([usize; 2], Direction) {
+    /// Return new position if still on Map
+    /// If guard can walk forward, that's what it will do
+    /// Otherwise turn right and walk forward
+    /// If guard walks off map return None
+    fn update(
+        &self,
+        position: [usize; 2],
+        direction: Direction,
+    ) -> Option<([usize; 2], Direction)> {
         let shape = self.map.shape();
-        let mut new_position = update_position(position, direction, shape);
-        let mut new_direction = direction;
-        todo!()
-        if new_position.is_none() || self.map[[new_position.unwrap()]] != Tok{
-            new_direction= rotate_right(&direction);
-            new_position = update_position(position, direction, shape);
+        // try to get forward position
+        let mut new_position = update_position(position, direction, shape)?;
+        // if we did get a forward position, check to see if it's blocked
+        let mut blocked = true;
+        if matches!(self.map[new_position], Token::Clear) {
+            blocked = false;
         }
-        (new_position.unwrap(), new_direction)
+        // turn right if we need to
+        let mut new_direction = direction;
+        if blocked {
+            new_direction = rotate_right(&direction);
+            new_position = update_position(position, new_direction, shape)?;
+        }
+        Some((new_position, new_direction))
     }
 }
 
 fn main() {
-    let puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
-    dbg!(&puzzle);
+    let puzzle = include_str!("06.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
-    assert_eq!(out, 41);
+    assert_eq!(out, 5534);
+    println!("{out}");
 }
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
 
     #[test]
     fn test() {
-        assert_eq!(1, 1)
+        let puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
+        let out = puzzle.process();
+        assert_eq!(out, 41);
     }
 }
