@@ -14,6 +14,14 @@ enum Direction {
     Up,
     Down,
 }
+fn direction_index(direction: &Direction) -> usize {
+    match direction {
+        Direction::Down => 0,
+        Direction::Up => 1,
+        Direction::Left => 2,
+        Direction::Right => 3,
+    }
+}
 fn position_change(direction: &Direction) -> [i64; 2] {
     match direction {
         Direction::Left => [0, -1],
@@ -56,6 +64,7 @@ struct Puzzle {
     map: Array2<Token>,
     position: [usize; 2],
     direction: Direction,
+    position_direction: Array3<bool>,
 }
 
 impl FromStr for Puzzle {
@@ -84,16 +93,61 @@ impl FromStr for Puzzle {
             }
         }
         let map = Array2::<Token>::from_shape_vec((nrows, ncols), tokens).unwrap();
+        let position_direction = Array3::from_elem([nrows, ncols, 4], false);
         Ok(Puzzle {
             map,
             position,
             direction: Direction::Up,
+            position_direction,
         })
     }
 }
 
 impl Puzzle {
-    fn process(&self) -> usize {
+    fn check_if_block_makes_loop(&mut self, block_location: [usize; 2]) -> bool {
+        match self.map[block_location] {
+            Token::Blocked => {
+                panic!();
+            }
+            Token::Clear => {
+                self.map[block_location] = Token::Blocked;
+            }
+        }
+        let mut looping = false;
+        self.position_direction.iter_mut().for_each(|x| {
+            *x = false;
+        });
+        let mut position = self.position;
+        let mut direction = self.direction;
+        self.position_direction[[position[0], position[1], direction_index(&direction)]] = true;
+        while let Some((new_position, new_direction)) = self.update(position, direction) {
+            position = new_position;
+            direction = new_direction;
+            let pd_index = [position[0], position[1], direction_index(&direction)];
+            if self.position_direction[pd_index] {
+                looping = true;
+                break;
+            }
+            self.position_direction[pd_index] = true;
+        }
+        self.map[block_location] = Token::Clear;
+        looping
+    }
+    fn process(&mut self) -> usize {
+        let positions = self.find_original_locations();
+        let mut out = 0;
+        for position in positions {
+            // not allowed to use initial location
+            if position == self.position {
+                continue;
+            }
+            if self.check_if_block_makes_loop(position) {
+                out += 1;
+            }
+        }
+        out
+    }
+    fn find_original_locations(&self) -> BTreeSet<[usize; 2]> {
         let mut positions = BTreeSet::new();
         let mut position = self.position;
         let mut direction = self.direction;
@@ -103,7 +157,7 @@ impl Puzzle {
             direction = new_direction;
             positions.insert(position);
         }
-        positions.len()
+        positions
     }
     /// Return new position if still on Map
     /// If guard can walk forward, that's what it will do
@@ -117,14 +171,9 @@ impl Puzzle {
         let shape = self.map.shape();
         // try to get forward position
         let mut new_position = update_position(position, direction, shape)?;
-        // if we did get a forward position, check to see if it's blocked
-        let mut blocked = true;
-        if matches!(self.map[new_position], Token::Clear) {
-            blocked = false;
-        }
-        // turn right if we need to
         let mut new_direction = direction;
-        if blocked {
+        // turn right if we need to
+        if matches!(self.map[new_position], Token::Blocked) {
             new_direction = rotate_right(&direction);
             new_position = update_position(position, new_direction, shape)?;
         }
@@ -133,10 +182,10 @@ impl Puzzle {
 }
 
 fn main() {
-    let puzzle = include_str!("06.txt").parse::<Puzzle>().unwrap();
+    let mut puzzle = include_str!("06.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
-    assert_eq!(out, 5534);
     println!("{out}");
+    assert!(out > 2124);
 }
 
 #[cfg(test)]
@@ -145,8 +194,14 @@ mod tests {
 
     #[test]
     fn test() {
-        let puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
+        let mut puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
         let out = puzzle.process();
+        assert_eq!(out, 6);
+    }
+    #[test]
+    fn test_part_a() {
+        let puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
+        let out = puzzle.find_original_locations().len();
         assert_eq!(out, 41);
     }
 }
