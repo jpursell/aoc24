@@ -137,6 +137,10 @@ impl Puzzle {
         let positions = self.find_original_locations();
         let mut out = 0;
         for position in positions {
+            // not allowed to use initial location
+            if position == self.position {
+                continue;
+            }
             if self.check_if_block_makes_loop(position) {
                 out += 1;
             }
