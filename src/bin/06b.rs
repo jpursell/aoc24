@@ -200,7 +200,7 @@ mod tests {
     }
     #[test]
     fn test_part_a() {
-        let mut puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
+        let puzzle = include_str!("06_test.txt").parse::<Puzzle>().unwrap();
         let out = puzzle.find_original_locations().len();
         assert_eq!(out, 41);
     }
