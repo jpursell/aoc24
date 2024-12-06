@@ -30,6 +30,27 @@ fn rotate_right(direction: &Direction) -> Direction {
         Direction::Down => Direction::Left,
     }
 }
+fn update_position(
+    position: [usize; 2],
+    direction: Direction,
+    shape: &[usize],
+) -> Option<[usize; 2]> {
+    let position_change = position_change(&direction);
+    let position = [position[0] as i64, position[1] as i64];
+    let new_position = [
+        position[0] + position_change[0],
+        position[1] + position_change[1],
+    ];
+    if new_position[0] < 0 || new_position[1] < 0 {
+        return None;
+    }
+    let new_position = [new_position[0] as usize, new_position[1] as usize];
+    if new_position[0] >= shape[0] || new_position[1] >= shape[1] {
+        return None;
+    }
+    Some(new_position)
+}
+
 #[derive(Debug)]
 struct Puzzle {
     map: Array2<Token>,
@@ -89,10 +110,10 @@ impl Puzzle {
         }
         positions.len()
     }
-    fn update(& self, position: [usize; 2], direction: Direction) -> ([usize;2],Direction) {
-        let position_change = position_change(&direction);
-        let position = [position[0] as i64, position[1] as i64];
-        let new_position = todo!();
+    fn update(&self, position: [usize; 2], direction: Direction) -> ([usize; 2], Direction) {
+        let shape = self.map.shape();
+        let new_position = update_position(position, direction, shape);
+        todo!();
     }
 }
 
