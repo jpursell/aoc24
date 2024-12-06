@@ -14,6 +14,14 @@ enum Direction {
     Up,
     Down,
 }
+fn direction_index(direction: &Direction) -> usize {
+    match direction {
+        Direction::Down => 0,
+        Direction::Up => 1,
+        Direction::Left => 2,
+        Direction::Right => 3,
+    }
+}
 fn position_change(direction: &Direction) -> [i64; 2] {
     match direction {
         Direction::Left => [0, -1],
@@ -56,6 +64,7 @@ struct Puzzle {
     map: Array2<Token>,
     position: [usize; 2],
     direction: Direction,
+    position_direction: Array3<bool>,
 }
 
 impl FromStr for Puzzle {
@@ -84,10 +93,12 @@ impl FromStr for Puzzle {
             }
         }
         let map = Array2::<Token>::from_shape_vec((nrows, ncols), tokens).unwrap();
+        let position_direction = Array3::from_elem([nrows, ncols, 4], false);
         Ok(Puzzle {
             map,
             position,
             direction: Direction::Up,
+            position_direction,
         })
     }
 }
@@ -103,21 +114,21 @@ impl Puzzle {
             }
         }
         let mut looping = false;
-        let mut positions = BTreeSet::new();
-        let mut position_directions = BTreeSet::new();
+        self.position_direction.iter_mut().for_each(|x| {
+            *x = false;
+        });
         let mut position = self.position;
         let mut direction = self.direction;
-        positions.insert(position);
-        position_directions.insert((position, direction));
+        self.position_direction[[position[0], position[1], direction_index(&direction)]] = true;
         while let Some((new_position, new_direction)) = self.update(position, direction) {
             position = new_position;
             direction = new_direction;
-            if position_directions.contains(&(position, direction)) {
+            let pd_index = [position[0], position[1], direction_index(&direction)];
+            if self.position_direction[pd_index] {
                 looping = true;
                 break;
             }
-            positions.insert(position);
-            position_directions.insert((position, direction));
+            self.position_direction[pd_index] = true;
         }
         self.map[block_location] = Token::Clear;
         looping
@@ -128,7 +139,6 @@ impl Puzzle {
         for position in positions {
             if self.check_if_block_makes_loop(position) {
                 out += 1;
-                dbg!(&position);
             }
         }
         out
@@ -175,8 +185,8 @@ impl Puzzle {
 fn main() {
     let mut puzzle = include_str!("06.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
-    assert!(out > 2124);
     println!("{out}");
+    assert!(out > 2124);
 }
 
 #[cfg(test)]
