@@ -171,14 +171,9 @@ impl Puzzle {
         let shape = self.map.shape();
         // try to get forward position
         let mut new_position = update_position(position, direction, shape)?;
-        // if we did get a forward position, check to see if it's blocked
-        let mut blocked = true;
-        if matches!(self.map[new_position], Token::Clear) {
-            blocked = false;
-        }
-        // turn right if we need to
         let mut new_direction = direction;
-        if blocked {
+        // turn right if we need to
+        if matches!(self.map[new_position], Token::Blocked) {
             new_direction = rotate_right(&direction);
             new_position = update_position(position, new_direction, shape)?;
         }
