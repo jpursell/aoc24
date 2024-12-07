@@ -12,14 +12,49 @@ impl FromStr for Equation {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (result, values) = s.split_once(": ").unwrap();
         let result = result.parse().unwrap();
-        let values = values.split(" ").map(|x| x.parse::<usize>().unwrap()).collect();
-        Ok(Equation{result, values})
+        let values: Vec<usize> = values
+            .split(" ")
+            .map(|x| x.parse::<usize>().unwrap())
+            .collect();
+        Ok(Equation { result, values })
     }
 }
 
 impl Equation {
     fn solvable(&self) -> bool {
-        todo!();
+        self.count_solutions(0, self.values[0]) > 0
+    }
+    fn count_solutions(&self, position: usize, partial_value: usize) -> usize {
+        assert!(position < self.values.len() - 1);
+        let at_bottom = position == self.values.len() - 2;
+        let mut solutions = 0;
+        // try Add
+        {
+            let partial_value = partial_value + self.values[position + 1];
+            if partial_value <= self.result {
+                if at_bottom {
+                    if partial_value == self.result {
+                        solutions += 1;
+                    }
+                } else {
+                    solutions += self.count_solutions(position + 1, partial_value)
+                }
+            }
+        }
+        // try Multiply
+        {
+            let partial_value = partial_value * self.values[position + 1];
+            if partial_value <= self.result {
+                if at_bottom {
+                    if partial_value == self.result {
+                        solutions += 1;
+                    }
+                } else {
+                    solutions += self.count_solutions(position + 1, partial_value)
+                }
+            }
+        }
+        solutions
     }
 }
 
@@ -57,6 +92,7 @@ fn main() {
     let mut puzzle = include_str!("07.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
+    assert_eq!(out, 1038838357795);
 }
 
 #[cfg(test)]
@@ -66,8 +102,17 @@ mod tests {
     #[test]
     fn test() {
         let mut puzzle = include_str!("07_test.txt").parse::<Puzzle>().unwrap();
-        dbg!(&puzzle);
         let out = puzzle.process();
         assert_eq!(out, 3749);
+    }
+    #[test]
+    fn test_no_zeros() {
+        let puzzle = include_str!("07.txt").parse::<Puzzle>().unwrap();
+        for equation in &puzzle.equations {
+            for value in &equation.values {
+                assert_ne!(value, &0);
+            }
+            assert_ne!(equation.result, 0);
+        }
     }
 }
