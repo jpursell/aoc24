@@ -173,8 +173,8 @@ impl Puzzle {
         let mut new_position = update_position(position, direction, shape)?;
         let mut new_direction = direction;
         // turn right if we need to
-        if matches!(self.map[new_position], Token::Blocked) {
-            new_direction = rotate_right(&direction);
+        while !matches!(self.map[new_position], Token::Clear) {
+            new_direction = rotate_right(&new_direction);
             new_position = update_position(position, new_direction, shape)?;
         }
         Some((new_position, new_direction))
@@ -185,7 +185,7 @@ fn main() {
     let mut puzzle = include_str!("06.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    assert!(out > 2124);
+    assert_eq!(out, 2262);
 }
 
 #[cfg(test)]
