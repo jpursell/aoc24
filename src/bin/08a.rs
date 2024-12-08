@@ -1,4 +1,7 @@
-use std::{collections::{btree_map::Entry, BTreeMap}, str::FromStr};
+use std::{
+    collections::{btree_map::Entry, BTreeMap, BTreeSet},
+    str::FromStr,
+};
 
 #[derive(Debug)]
 struct Puzzle {
@@ -35,8 +38,29 @@ impl FromStr for Puzzle {
 
 impl Puzzle {
     fn process(&mut self) -> usize {
-        let mut out = 0;
-        out
+        let mut antinodes = BTreeSet::<[usize; 2]>::new();
+        for antenna_positions in self.antennas.values() {
+            for start in antenna_positions {
+                for end in antenna_positions {
+                    if start == end {
+                        continue;
+                    }
+                    let start = start.map(|x| x as i64);
+                    let end = end.map(|x| x as i64);
+                    let diff = [end[0] - start[0], end[1] - start[1]];
+                    let antinode = [end[0] + diff[0], end[1] + diff[1]];
+                    if antinode[0] < 0 || antinode[1] < 0 {
+                        continue;
+                    }
+                    let antinode = antinode.map(|x| x as usize);
+                    if antinode[0] >= self.shape[0] || antinode[1] >= self.shape[1] {
+                        continue;
+                    }
+                    antinodes.insert(antinode);
+                }
+            }
+        }
+        antinodes.len()
     }
 }
 
@@ -44,7 +68,7 @@ fn main() {
     let mut puzzle = include_str!("08.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 392);
 }
 
 #[cfg(test)]
@@ -54,7 +78,6 @@ mod tests {
     #[test]
     fn test() {
         let mut puzzle = include_str!("08_test.txt").parse::<Puzzle>().unwrap();
-        dbg!(&puzzle);
         let out = puzzle.process();
         assert_eq!(out, 14);
     }
