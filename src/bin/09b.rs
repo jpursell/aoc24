@@ -20,12 +20,31 @@ impl FromStr for Puzzle {
 
 /// Find first area on disc that can fit file of length size
 /// Return None if nothing is available before end
-fn find_first_space(disc: &[Option<usize>], size:usize, end: usize) -> Option<usize> {
+fn find_first_space(disc: &[Option<usize>], size: usize, end: usize) -> Option<usize> {
     let mut start = None;
-    todo!();
+    let mut size_found = 0;
+    for (i, block) in disc.iter().enumerate() {
+        if i >= end {
+            return None;
+        }
+        if block.is_some() {
+            size_found = 0;
+            start = None;
+        } else {
+            if start.is_none() {
+                start = Some(i);
+            }
+            size_found += 1;
+            if size_found >= size {
+                return start;
+            }
+        }
+    }
+    None
 }
+
 fn compact_disc(disc: &mut [Option<usize>]) {
-    let mut read_head = disc.len() -1;
+    let mut read_head = disc.len() - 1;
     let start_id = disc[read_head].unwrap();
     for id in (1..=start_id).rev() {
         while disc[read_head].is_none() || disc[read_head].unwrap() != id {
@@ -40,13 +59,16 @@ fn compact_disc(disc: &mut [Option<usize>]) {
         let block_start = read_head + 1;
         let block_length = block_start - block_end;
 
-        let gap = find_first_space(&disc, block_length, block_start);
+        let gap = find_first_space(disc, block_length, block_start);
         if gap.is_none() {
             continue;
         }
-
-        todo!("move file");
-
+        let gap = gap.unwrap();
+        for i in 0..block_length {
+            assert!(disc[i + block_start].is_some());
+            disc[i + gap] = disc[i + block_start];
+            disc[i + block_start] = None;
+        }
     }
 }
 impl Puzzle {
