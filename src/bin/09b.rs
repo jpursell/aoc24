@@ -57,7 +57,7 @@ fn compact_disc(disc: &mut [Option<usize>]) {
             read_head -= 1;
         }
         let block_start = read_head + 1;
-        let block_length = block_start - block_end;
+        let block_length = block_end - block_start;
 
         let gap = find_first_space(disc, block_length, block_start);
         if gap.is_none() {
@@ -106,7 +106,7 @@ fn main() {
     let mut puzzle = include_str!("09.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    assert_eq!(out, 6320029754031);
+    assert_eq!(out, 6347435485773);
 }
 
 #[cfg(test)]
@@ -117,7 +117,7 @@ mod tests {
     fn test() {
         let mut puzzle = include_str!("09_test.txt").parse::<Puzzle>().unwrap();
         let out = puzzle.process();
-        assert_eq!(out, 1928);
+        assert_eq!(out, 2858);
     }
     #[test]
     fn check_input_length() {
