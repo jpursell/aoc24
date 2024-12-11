@@ -25,26 +25,64 @@ impl FromStr for Puzzle {
     }
 }
 
+fn digit_count(num: &usize) -> usize {
+    let mut digits = 0;
+    let mut val = 1;
+    while &val <= num {
+        val *= 10;
+        digits += 1;
+    }
+    digits
+}
+
+fn split_digits(num: &usize, ndigits: usize) -> (usize, usize) {
+    let val = 10_usize.pow((ndigits / 2) as u32);
+    let left = num / val;
+    let right = num - left * val;
+    (left, right)
+}
+
 impl Puzzle {
     fn process(&mut self) -> usize {
         while self.blinks < BLINKS {
             self.blink();
+            self.blinks += 1;
         }
         self.stone_count()
     }
     fn current_index(&self) -> usize {
         self.blinks % 2
     }
-    fn next_index(&self) -> usize {
-        (self.current_index() + 1) % 2
-    }
     fn stone_count(&self) -> usize {
         self.buffers[self.current_index()].len()
     }
     fn blink(&mut self) {
-        let current = &self.buffers[self.current_index()];
-        let next = &mut self.buffers[self.current_index()];
-        todo!()
+        let current_index = self.current_index();
+        let (b0, b1) = self.buffers.split_at_mut(1);
+        let current;
+        let next;
+        if current_index == 0 {
+            current = &b0[0];
+            next = &mut b1[0];
+        } else {
+            current = &b1[0];
+            next = &mut b0[0];
+        }
+        next.clear();
+        for stone in current {
+            if stone == &0 {
+                next.push(1)
+            } else {
+                let digit_count = digit_count(stone);
+                if digit_count % 2 == 0 {
+                    let (left, right) = split_digits(stone, digit_count);
+                    next.push(left);
+                    next.push(right);
+                } else {
+                    next.push(stone * 2024);
+                }
+            }
+        }
     }
 }
 
@@ -52,7 +90,7 @@ fn main() {
     let mut puzzle = include_str!("11.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 203609);
 }
 
 #[cfg(test)]
@@ -62,8 +100,23 @@ mod tests {
     #[test]
     fn test() {
         let mut out = include_str!("11_test.txt").parse::<Puzzle>().unwrap();
-        dbg!(&out);
         let out = out.process();
         assert_eq!(out, 55312);
+    }
+
+    #[test]
+    fn test_digit_count_1() {
+        let out = digit_count(&1);
+        assert_eq!(out, 1);
+    }
+    #[test]
+    fn test_digit_count_9() {
+        let out = digit_count(&9);
+        assert_eq!(out, 1);
+    }
+    #[test]
+    fn test_digit_count_10() {
+        let out = digit_count(&10);
+        assert_eq!(out, 2);
     }
 }
