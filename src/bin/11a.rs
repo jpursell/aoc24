@@ -4,7 +4,6 @@ const BLINKS: usize = 25;
 
 #[derive(Debug)]
 struct Puzzle {
-    stones: Vec<usize>,
     buffers: [Vec<usize>; 2],
     blinks: usize,
 }
@@ -18,14 +17,34 @@ impl FromStr for Puzzle {
             stones.push(num.parse::<usize>().unwrap());
         }
         let size = stones.len() * 2_usize.pow(BLINKS as u32);
-        let buffers = [Vec::with_capacity(size), Vec::with_capacity(size)];
-        Ok(Puzzle { stones , buffers, blinks: 0})
+        let mut buffers = [Vec::with_capacity(size), Vec::with_capacity(size)];
+        for stone in stones {
+            buffers[0].push(stone);
+        }
+        Ok(Puzzle { buffers, blinks: 0 })
     }
 }
 
 impl Puzzle {
     fn process(&mut self) -> usize {
-        0
+        while self.blinks < BLINKS {
+            self.blink();
+        }
+        self.stone_count()
+    }
+    fn current_index(&self) -> usize {
+        self.blinks % 2
+    }
+    fn next_index(&self) -> usize {
+        (self.current_index() + 1) % 2
+    }
+    fn stone_count(&self) -> usize {
+        self.buffers[self.current_index()].len()
+    }
+    fn blink(&mut self) {
+        let current = &self.buffers[self.current_index()];
+        let next = &mut self.buffers[self.current_index()];
+        todo!()
     }
 }
 
