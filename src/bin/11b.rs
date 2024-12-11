@@ -39,6 +39,28 @@ enum Stone {
     Val(usize),
     Seq((usize, usize)),
 }
+fn convert_split_val(val: usize) -> Stone {
+    match val {
+        0..=9 => Stone::Seq((val, 0)),
+        n => Stone::Val(n),
+    }
+}
+fn handle_stone(stone: &Stone) -> (Stone, Option<Stone>) {
+    match stone {
+        Stone::Val(0) => (Stone::Val(1), None),
+        Stone::Val(n) => {
+            let ndigits = digit_count(n);
+            if ndigits % 2 == 0 {
+                let (left, right) = split_digits(n, ndigits);
+                (convert_split_val(left), Some(convert_split_val(right)))
+            } else {
+                (Stone::Val(2024 * n), None)
+            }
+        }
+        Stone::Seq((num, it)) => (Stone::Seq((*num, it + 1)), None),
+    }
+}
+
 fn create_sequence(num: usize) -> Vec<Vec<usize>> {
     let mut sequence = Vec::with_capacity(10);
     for _ in 0..10 {
@@ -66,27 +88,10 @@ fn create_sequence(num: usize) -> Vec<Vec<usize>> {
             };
             next.clear();
             for stone in current {
-                match stone {
-                    Stone::Val(0) => {
-                        next.push(Stone::Val(1));
-                    }
-                    Stone::Val(n) => {
-                        let ndigits = digit_count(n);
-                        if ndigits % 2 == 0 {
-                            let (left, right) = split_digits(n, ndigits);
-                            let mut handle_val = |val: usize| match val {
-                                0..=9 => next.push(Stone::Seq((val, 0))),
-                                n => next.push(Stone::Val(n)),
-                            };
-                            handle_val(left);
-                            handle_val(right);
-                        } else {
-                            next.push(Stone::Val(2024 * n));
-                        }
-                    }
-                    Stone::Seq((num, it)) => {
-                        next.push(Stone::Seq((*num, it + 1)));
-                    }
+                let stones = handle_stone(stone);
+                next.push(stones.0);
+                if let Some(stone) = stones.1 {
+                    next.push(stone)
                 }
             }
             let new_value = next
@@ -117,27 +122,10 @@ fn count_stone(init: usize, sequence: &[Vec<usize>], nblinks: usize) -> usize {
         };
         next.clear();
         for stone in current {
-            match stone {
-                Stone::Val(0) => {
-                    next.push(Stone::Val(1));
-                }
-                Stone::Val(n) => {
-                    let ndigits = digit_count(n);
-                    if ndigits % 2 == 0 {
-                        let (left, right) = split_digits(n, ndigits);
-                        let mut handle_val = |val: usize| match val {
-                            0..=9 => next.push(Stone::Seq((val, 0))),
-                            n => next.push(Stone::Val(n)),
-                        };
-                        handle_val(left);
-                        handle_val(right);
-                    } else {
-                        next.push(Stone::Val(2024 * n));
-                    }
-                }
-                Stone::Seq((num, it)) => {
-                    next.push(Stone::Seq((*num, it + 1)));
-                }
+            let stones = handle_stone(stone);
+            next.push(stones.0);
+            if let Some(stone) = stones.1 {
+                next.push(stone)
             }
         }
     }
