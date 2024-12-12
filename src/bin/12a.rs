@@ -3,13 +3,28 @@ use ndarray::prelude::*;
 
 fn label_image(map: ArrayView2<char>) -> Array2<usize>{
     let mut out = Array2::zeros(map.raw_dim());
-    let mut label = 1;
+    let mut label = 0;
     let shape = out.shape();
-    out[[0, 0]] = label;
+    // init rows with 1 1d label images
     for irow in 0..shape[0] {
+        label += 1;
+        out[[irow, 0]] = label;
         for icol in 1..shape[1] {
-            todo!()
-            // if map[[irow, icol]] 
+            if map[[irow, icol]] != map[[irow, icol - 1]] {
+                label += 1;
+            }
+            out[[irow, icol]] = label;
+        }
+    }
+    // connect regions
+    let mut regions = Vec::new();
+    for icol = 0..shape[1] {
+        for irow = 0..shape[0] {
+            let connected_above = irow > 0 && map[[irow, icol]] == map[[irow-1, icol]];
+            if !connected_above {
+                continue;
+            }
+            todo!();
         }
     }
     out
