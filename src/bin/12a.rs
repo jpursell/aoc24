@@ -1,6 +1,20 @@
 use std::{collections::BTreeSet, str::FromStr};
 use ndarray::prelude::*;
 
+fn label_image(map: ArrayView2<char>) -> Array2<usize>{
+    let mut out = Array2::zeros(map.raw_dim());
+    let mut label = 1;
+    let shape = out.shape();
+    out[[0, 0]] = label;
+    for irow in 0..shape[0] {
+        for icol in 1..shape[1] {
+            todo!()
+            // if map[[irow, icol]] 
+        }
+    }
+    out
+}
+
 struct Region {
     positions: BTreeSet<[usize; 2]>,
     perimeter: usize,
@@ -14,6 +28,7 @@ impl Region {
         Region{positions, perimeter}
     }
 }
+
 
 #[derive(Debug)]
 struct Puzzle {
