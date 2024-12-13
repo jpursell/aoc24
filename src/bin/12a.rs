@@ -1,10 +1,13 @@
-use std::{collections::BTreeSet, str::FromStr};
 use ndarray::prelude::*;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    str::FromStr,
+};
 
-fn label_image(map: ArrayView2<char>) -> Array2<usize>{
+fn label_image(map: ArrayView2<char>) -> (Array2<usize>, usize) {
     let mut out = Array2::zeros(map.raw_dim());
     let mut label = 0;
-    let shape = out.shape();
+    let shape = out.shape().to_vec();
     // init rows with 1 1d label images
     for irow in 0..shape[0] {
         label += 1;
@@ -17,33 +20,64 @@ fn label_image(map: ArrayView2<char>) -> Array2<usize>{
         }
     }
     // connect regions
+    let mut label_region = BTreeMap::new();
     let mut regions = Vec::new();
-    for icol = 0..shape[1] {
-        for irow = 0..shape[0] {
-            let connected_above = irow > 0 && map[[irow, icol]] == map[[irow-1, icol]];
-            if !connected_above {
+    for icol in 0..shape[1] {
+        for irow in 1..shape[0] {
+            let above_label = out[[irow - 1, icol]];
+            let above_char = map[[irow - 1, icol]];
+            let current_label = out[[irow, icol]];
+            let current_char = map[[irow, icol]];
+            let mut add_key = |key| {
+                label_region.entry(key).or_insert_with(|| {
+                    regions.push(BTreeSet::from([key]));
+                    regions.len() - 1
+                });
+            };
+            add_key(above_label);
+            add_key(current_label);
+            if above_char != current_char {
                 continue;
             }
-            todo!();
+            let above_region = label_region[&above_label];
+            let current_region = label_region[&current_label];
+            // already merged?
+            if above_region == current_region {
+                continue;
+            }
+            // merge
+            for key in &regions[current_region] {
+                *label_region.get_mut(key).unwrap() = above_region;
+            }
+            // want to do this: regions[above_region].append(&mut regions[current_region]);
+            // ...but need to use split_at_mut to avoid double mutable ref
+            if above_region < current_region {
+                let (left_regions, right_regions) = regions.split_at_mut(current_region);
+                left_regions[above_region].append(&mut right_regions[0]);
+            } else {
+                let (left_regions, right_regions) = regions.split_at_mut(above_region);
+                right_regions[0].append(&mut left_regions[current_region]);
+            }
         }
     }
-    out
+    // remove empty regions
+    let regions = regions
+        .into_iter()
+        .filter(|r| !r.is_empty())
+        .collect::<Vec<_>>();
+    for (iregion, region) in regions.iter().enumerate() {
+        for key in region {
+            *label_region.get_mut(key).unwrap() = iregion;
+        }
+    }
+    out.iter_mut().for_each(|x| *x = label_region[x]);
+    (out, regions.len())
 }
 
 struct Region {
-    positions: BTreeSet<[usize; 2]>,
+    area: usize,
     perimeter: usize,
 }
-impl Region {
-    fn new(map: ArrayView2<char>, start: [usize;2]) -> Self {
-        let char = map[start];
-        let mut positions = BTreeSet::from([start]);
-        let mut perimeter = 0;
-
-        Region{positions, perimeter}
-    }
-}
-
 
 #[derive(Debug)]
 struct Puzzle {
@@ -69,21 +103,37 @@ impl FromStr for Puzzle {
 
 impl Puzzle {
     fn process(&mut self) -> usize {
-        let mut covered = Array2::from_elem(self.map.raw_dim(), false);
-        let mut out = 0;
-        for (pos, _) in self.map.indexed_iter() {
-            let pos = [pos.0, pos.1];
-            if covered[pos] {
-                continue;
-            }
-            let region = Region::new(self.map.view(), pos);
-            for pos in &region.positions {
-                assert!(!covered[*pos]);
-                covered[*pos] = true;
-            }
-            out += region.positions.len() * region.perimeter;
+        let (labels, num_regions) = label_image(self.map.view());
+        let mut regions = Vec::with_capacity(num_regions);
+        for _ in 0..num_regions {
+            regions.push(Region {
+                area: 0,
+                perimeter: 0,
+            });
         }
-        out
+        let shape = labels.shape().to_vec();
+        for (pos, &label) in labels.indexed_iter() {
+            let pos = [pos.0, pos.1];
+            let region = &mut regions[label];
+            region.area += 1;
+            // check up
+            if pos[0] == 0 || labels[[pos[0] - 1, pos[1]]] != label {
+                region.perimeter += 1;
+            }
+            // check down
+            if pos[0] == shape[0] - 1 || labels[[pos[0] + 1, pos[1]]] != label {
+                region.perimeter += 1;
+            }
+            // check left
+            if pos[1] == 0 || labels[[pos[0], pos[1] - 1]] != label {
+                region.perimeter += 1;
+            }
+            // check right
+            if pos[1] == shape[1] - 1 || labels[[pos[0], pos[1] + 1]] != label {
+                region.perimeter += 1;
+            }
+        }
+        regions.iter().map(|r| r.area * r.perimeter).sum()
     }
 }
 
@@ -91,7 +141,7 @@ fn main() {
     let mut puzzle = include_str!("12.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 1456082);
 }
 
 #[cfg(test)]
