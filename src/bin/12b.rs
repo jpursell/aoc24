@@ -111,28 +111,12 @@ impl Puzzle {
                 sides: 0,
             });
         }
-        let shape = labels.shape().to_vec();
-        for (pos, &label) in labels.indexed_iter() {
-            let pos = [pos.0, pos.1];
-            let region = &mut regions[label];
-            region.area += 1;
-            // check up
-            if pos[0] == 0 || labels[[pos[0] - 1, pos[1]]] != label {
-                region.sides += 1;
-            }
-            // check down
-            if pos[0] == shape[0] - 1 || labels[[pos[0] + 1, pos[1]]] != label {
-                region.sides += 1;
-            }
-            // check left
-            if pos[1] == 0 || labels[[pos[0], pos[1] - 1]] != label {
-                region.sides += 1;
-            }
-            // check right
-            if pos[1] == shape[1] - 1 || labels[[pos[0], pos[1] + 1]] != label {
-                region.sides += 1;
-            }
+        for &label in labels.iter() {
+            (*regions.get_mut(label).unwrap()).area += 1;
         }
+        let shape = labels.shape().to_vec();
+        // check vertical sides
+        // check hoizontal sides
         regions.iter().map(|r| r.area * r.sides).sum()
     }
 }
