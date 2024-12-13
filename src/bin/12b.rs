@@ -74,6 +74,7 @@ fn label_image(map: ArrayView2<char>) -> (Array2<usize>, usize) {
     (out, regions.len())
 }
 
+#[derive(Debug)]
 struct Region {
     area: usize,
     sides: usize,
@@ -106,17 +107,147 @@ impl Puzzle {
         let (labels, num_regions) = label_image(self.map.view());
         let mut regions = Vec::with_capacity(num_regions);
         for _ in 0..num_regions {
-            regions.push(Region {
-                area: 0,
-                sides: 0,
-            });
+            regions.push(Region { area: 0, sides: 0 });
         }
         for &label in labels.iter() {
-            (*regions.get_mut(label).unwrap()).area += 1;
+            regions.get_mut(label).unwrap().area += 1;
         }
         let shape = labels.shape().to_vec();
+
         // check vertical sides
-        // check hoizontal sides
+        {
+            // top
+            for icol in 0..shape[1] {
+                let current_label = labels[[0, icol]];
+
+                // left
+                if icol == 0 || labels[[0, icol - 1]] != current_label {
+                    regions[current_label].sides += 1;
+                }
+
+                // right
+                if icol == shape[1] - 1 || labels[[0, icol + 1]] != current_label {
+                    regions[current_label].sides += 1;
+                }
+            }
+
+            for irow in 1..shape[0] {
+                for icol in 0..shape[1] {
+                    let current_label = &labels[[irow, icol]];
+
+                    let left_label = if icol > 0 {
+                        labels.get([irow, icol - 1])
+                    } else {
+                        None
+                    };
+                    let right_label = labels.get([irow, icol + 1]);
+                    let up_label = labels.get([irow - 1, icol]).unwrap();
+                    let up_left_label = if icol > 0 {
+                        labels.get([irow - 1, icol - 1])
+                    } else {
+                        None
+                    };
+                    let up_right_label = labels.get([irow - 1, icol + 1]);
+
+                    // left
+                    if let Some(left_label) = left_label {
+                        if left_label != current_label
+                            && (up_label != current_label
+                                || up_left_label.unwrap() == current_label)
+                        {
+                            regions[*current_label].sides += 1;
+                        }
+                    } else {
+                        // on left edge of image
+                        if up_label != current_label {
+                            regions[*current_label].sides += 1;
+                        }
+                    }
+
+                    // right
+                    if let Some(right_label) = right_label {
+                        if right_label != current_label
+                            && (up_label != current_label
+                                || current_label == up_right_label.unwrap())
+                        {
+                            regions[*current_label].sides += 1;
+                        }
+                    } else {
+                        // on right edge of image
+                        if up_label != current_label {
+                            regions[*current_label].sides += 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        // check horizontal sides
+        {
+            // left
+            for irow in 0..shape[0] {
+                let current_label = labels[[irow, 0]];
+
+                // top
+                if irow == 0 || labels[[irow - 1, 0]] != current_label {
+                    regions[current_label].sides += 1;
+                }
+
+                // bottom
+                if irow == shape[0] - 1 || labels[[irow + 1, 0]] != current_label {
+                    regions[current_label].sides += 1;
+                }
+            }
+
+            for icol in 1..shape[1] {
+                for irow in 0..shape[0] {
+                    let current_label = &labels[[irow, icol]];
+                    let top_label = if irow > 0 {
+                        labels.get([irow - 1, icol])
+                    } else {
+                        None
+                    };
+                    let bottom_label = labels.get([irow + 1, icol]);
+                    let left_label = labels.get([irow, icol - 1]).unwrap();
+                    let up_left_label = if irow > 0 {
+                        labels.get([irow - 1, icol - 1])
+                    } else {
+                        None
+                    };
+                    let bottom_left_label = labels.get([irow + 1, icol - 1]);
+
+                    // top
+                    if let Some(top_label) = top_label {
+                        if top_label != current_label
+                            && (left_label != current_label
+                                || current_label == up_left_label.unwrap())
+                        {
+                            regions[*current_label].sides += 1;
+                        }
+                    } else {
+                        // on top edge of image
+                        if left_label != current_label {
+                            regions[*current_label].sides += 1;
+                        }
+                    }
+
+                    // bottom
+                    if let Some(bottom_label) = bottom_label {
+                        if bottom_label != current_label
+                            && (left_label != current_label
+                                || current_label == bottom_left_label.unwrap())
+                        {
+                            regions[*current_label].sides += 1;
+                        }
+                    } else {
+                        // on bottom edge of image
+                        if left_label != current_label {
+                            regions[*current_label].sides += 1;
+                        }
+                    }
+                }
+            }
+        }
         regions.iter().map(|r| r.area * r.sides).sum()
     }
 }
@@ -125,7 +256,7 @@ fn main() {
     let mut puzzle = include_str!("12.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    assert_eq!(out, 1456082);
+    assert_eq!(out, 872382);
 }
 
 #[cfg(test)]
