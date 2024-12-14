@@ -119,7 +119,7 @@ fn draw_room(room: ArrayView2<bool>) {
                 print!(" ")
             }
         }
-        println!("");
+        println!();
     }
 }
 
