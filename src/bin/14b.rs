@@ -1,6 +1,6 @@
-use core::time;
-use std::{str::FromStr, thread::sleep};
+// use core::time;
 use ndarray::prelude::*;
+use std::str::FromStr;
 
 #[derive(Debug)]
 struct Robot {
@@ -62,33 +62,114 @@ impl FromStr for Puzzle {
     }
 }
 
-impl Puzzle {
-    fn process(&mut self, time: i64, room_size: [i64; 2]) {
-        let shape = room_size.map(|x| x as usize);
-        let mut room = Array2::from_elem(shape, false);
-        for robot in &self.robots {
-            *room.get_mut( robot.position_after(time, room_size).map(|x| x as usize)).unwrap() = true;
+// fn quadrant(position: [i64; 2], room_size: [i64; 2]) -> Option<usize> {
+//     assert!(position[0] >= 0);
+//     assert!(position[1] >= 0);
+//     assert!(position[0] < room_size[0]);
+//     assert!(position[1] < room_size[1]);
+//     let half = room_size.map(|x| (x - 1) / 2);
+//     match position[0].cmp(&half[0]) {
+//         std::cmp::Ordering::Less => match position[1].cmp(&half[1]) {
+//             std::cmp::Ordering::Less => Some(0),
+//             std::cmp::Ordering::Equal => None,
+//             std::cmp::Ordering::Greater => Some(1),
+//         },
+//         std::cmp::Ordering::Equal => None,
+//         std::cmp::Ordering::Greater => match position[1].cmp(&half[1]) {
+//             std::cmp::Ordering::Less => Some(2),
+//             std::cmp::Ordering::Equal => None,
+//             std::cmp::Ordering::Greater => Some(3),
+//         },
+//     }
+// }
+
+fn symmetry(room: ArrayView2<bool>) -> usize {
+    let mut out = 0;
+    for irow in 0..room.shape()[0] {
+        if irow == 0 {
+            continue;
         }
-        for irow in 0..shape[0] {
-            for icol in 0..shape[1] {
-                if room[[irow, icol]] {
-                    print!("#")
-                } else {
-                    print!(" ")
+        for icol in 0..(room.shape()[1] - 1) / 2 {
+            if icol == 0 {
+                continue;
+            }
+            for drow in -1_i32..=1 {
+                for dcol in -1_i32..=1 {
+                    if let Some(val) =
+                        room.get([(irow as i32 + drow) as usize, (icol as i32 + dcol) as usize])
+                    {
+                        if *val {
+                            out += 1;
+                        }
+                    }
                 }
             }
-            println!("");
         }
+    }
+    out
+}
+
+fn draw_room(room: ArrayView2<bool>) {
+    let shape = room.shape();
+    for irow in 0..shape[0] {
+        for icol in 0..shape[1] {
+            if room[[irow, icol]] {
+                print!("#")
+            } else {
+                print!(" ")
+            }
+        }
+        println!("");
     }
 }
 
+impl Puzzle {
+    // fn check(&self, time: i64, room_size: [i64; 2]) -> bool {
+    //     let mut quadrant_robot_counts = [0; 4];
+    //     for robot in &self.robots {
+    //         if let Some(quadrant) = quadrant(robot.position_after(time, room_size), room_size) {
+    //             quadrant_robot_counts[quadrant] += 1;
+    //         }
+    //     }
+    //     quadrant_robot_counts[0] == quadrant_robot_counts[1]
+    //         && quadrant_robot_counts[2] == quadrant_robot_counts[3]
+    //         && quadrant_robot_counts[0] == quadrant_robot_counts[2]
+    // }
+    fn make_room(&self, time: i64, room_size: [i64; 2]) -> Array2<bool> {
+        let shape = room_size.map(|x| x as usize);
+        let mut room = Array2::from_elem(shape, false);
+        for robot in &self.robots {
+            *room
+                .get_mut(robot.position_after(time, room_size).map(|x| x as usize))
+                .unwrap() = true;
+        }
+        room
+    }
+    // fn match_start(&self, time: i64, room_size: [i64; 2]) -> bool {
+    //     self.robots.iter().all(|r| {
+    //         let p = r.position_after(time, room_size);
+    //         p == r.position
+    //     })
+    // }
+}
+
 fn main() {
-    let mut puzzle = include_str!("14.txt").parse::<Puzzle>().unwrap();
+    let puzzle = include_str!("14.txt").parse::<Puzzle>().unwrap();
     let room_size = [101, 103];
-    for time in 0..100 {
-        println!("time: {time}");
-        puzzle.process(time, room_size);
-        sleep(time::Duration::from_millis(200));
+    let mut max_symmetry = 0;
+    let max_time = 10403;
+    for time in 1..max_time {
+        let room = puzzle.make_room(time, room_size);
+        let symmetry = symmetry(room.view());
+        if symmetry >= max_symmetry {
+            println!("time: {time}, symmetry: {symmetry}");
+            draw_room(room.view());
+            max_symmetry = symmetry;
+        }
+        // if puzzle.match_start(time, room_size) {
+        //     println!("looped: time: {time}");
+        //     break;
+        // }
     }
 }
 
