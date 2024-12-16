@@ -1,5 +1,5 @@
 use ndarray::prelude::*;
-use std::{collections::BTreeSet, str::FromStr};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy)]
 enum Token {
@@ -77,123 +77,92 @@ const DIRECTIONS: [Direction; 4] = [
 ];
 
 struct State {
-    positions_vec: Vec<[usize; 2]>,
-    positions_set: BTreeSet<[usize; 2]>,
-    scores: Vec<usize>,
-    directions: Vec<Direction>,
-    print: bool,
-    min_score: Option<usize>,
+    scores: Array2<Option<usize>>,
+    directions: Array2<Option<Direction>>,
+    steps: usize,
 }
-impl State {
-    fn add_move(&mut self, direction: Direction) {
-        let current_direction = self.directions.last().unwrap();
-        let next_position = direction
-            .position_from(self.positions_vec.last().unwrap())
-            .unwrap();
-        self.positions_set.insert(next_position);
-        self.positions_vec.push(next_position);
-        if current_direction == &direction {
-            self.scores.push(self.scores.last().unwrap() + 1);
-        } else {
-            self.scores.push(self.scores.last().unwrap() + 1001);
-        }
-        self.directions.push(direction);
-    }
-    fn remove_move(&mut self) {
-        let pos = self.positions_vec.pop().unwrap();
-        self.positions_set.remove(&pos);
-        self.scores.pop().unwrap();
-        self.directions.pop().unwrap();
-    }
-    fn remove_moves(&mut self, moves: usize) {
-        for _ in 0..moves {
-            self.remove_move();
-        }
-    }
-    fn update_min_score(&mut self) {
-        let score = self.scores.last().unwrap();
-        if let Some(min_score) = self.min_score {
-            self.min_score = Some(min_score.min(*score));
-        } else {
-            self.min_score = Some(*score);
-        }
-    }
-}
+
 impl Puzzle {
     fn process(&self, print: bool) -> usize {
         let mut state = State {
-            positions_set: BTreeSet::from([self.start]),
-            positions_vec: vec![self.start],
-            scores: vec![0],
-            directions: vec![Direction::Right],
-            print,
-            min_score: None,
+            scores: Array2::<Option<usize>>::from_elem(self.map.raw_dim(), None),
+            directions: Array2::<Option<Direction>>::from_elem(self.map.raw_dim(), None),
+            steps: 0,
         };
-        self.find_lowest_score(&mut state);
-        state.min_score.unwrap()
+        state.scores[self.start] = Some(0);
+        state.directions[self.start] = Some(Direction::Right);
+        let mut ends = [vec![self.start], Vec::new()];
+        loop {
+            let (e0, e1) = ends.split_at_mut(1);
+            let (current, next) = if state.steps % 2 == 0 {
+                (&e0[0], &mut e1[0])
+            } else {
+                (&e1[0], &mut e0[0])
+            };
+            next.clear();
+            if current.is_empty() {
+                break;
+            }
+            for pos in current {
+                next.append(&mut self.process_pos(pos, &mut state));
+            }
+            state.steps += 1;
+        }
+        if print {
+            self.print_path(&state);
+        }
+        state.scores[self.end].unwrap()
     }
-    fn find_possible_dirs(&self, state: &State) -> Vec<Direction> {
+    fn process_pos(&self, pos: &[usize; 2], state: &mut State) -> Vec<[usize; 2]> {
+        let mut next_ends = Vec::new();
+        for next_direction in self.find_possible_dirs(pos) {
+            let next_position = next_direction.position_from(pos).unwrap();
+            let next_score = if next_direction == state.directions[*pos].unwrap() {
+                state.scores[*pos].unwrap() + 1
+            } else {
+                state.scores[*pos].unwrap() + 1001
+            };
+            if let Some(score) = state.scores[next_position] {
+                if next_score < score {
+                    next_ends.push(next_position);
+                    state.scores[next_position] = Some(next_score);
+                    state.directions[next_position] = Some(next_direction);
+                }
+            } else {
+                next_ends.push(next_position);
+                state.scores[next_position] = Some(next_score);
+                state.directions[next_position] = Some(next_direction);
+            }
+        }
+        next_ends
+    }
+    fn find_possible_dirs(&self, pos: &[usize; 2]) -> Vec<Direction> {
         let mut possible_directions = Vec::new();
         for next_direction in DIRECTIONS {
-            {
-                let next_position =
-                    next_direction.position_from(state.positions_vec.last().unwrap());
-                if next_position.is_none() {
-                    continue;
-                }
-                let next_position = next_position.unwrap();
-                if state.positions_set.contains(&next_position) {
-                    continue;
-                }
-                let next_token = self.map.get(next_position);
-                if next_token.is_none() {
-                    continue;
-                }
-                if matches!(next_token.unwrap(), Token::Wall) {
-                    continue;
-                }
+            let next_position = next_direction.position_from(pos);
+            if next_position.is_none() {
+                continue;
+            }
+            let next_position = next_position.unwrap();
+            let next_token = self.map.get(next_position);
+            if next_token.is_none() {
+                continue;
+            }
+            if matches!(next_token.unwrap(), Token::Wall) {
+                continue;
             }
             possible_directions.push(next_direction);
         }
         possible_directions
     }
-    fn find_lowest_score(&self, state: &mut State) {
-        let mut moves = 0;
-        let mut directions = self.find_possible_dirs(state);
-        while directions.len() == 1 {
-            state.add_move(directions[0]);
-            moves += 1;
-            if state.positions_vec.last().unwrap() == &self.end {
-                if state.print {
-                    self.print_path(state);
-                }
-                state.update_min_score();
-                state.remove_moves(moves);
-                return;
-            }
-            directions = self.find_possible_dirs(state);
-        }
-        for next_direction in directions {
-            state.add_move(next_direction);
-            moves += 1;
-            if state.positions_vec.last().unwrap() == &self.end {
-                if state.print {
-                    self.print_path(state);
-                }
-                state.update_min_score();
-                state.remove_moves(moves);
-                return;
-            }
-            self.find_lowest_score(state);
-            state.remove_move();
-            moves -= 1;
-        }
-        state.remove_moves(moves);
-    }
     fn print_path(&self, state: &State) {
-        let score = state.scores.last().unwrap();
+        let score = state.scores[self.end];
         println!();
-        println!("Score: {}", score);
+        if score.is_none() {
+            println!("Score: None");
+        } else {
+            println!("Score: {}", score.unwrap());
+        }
         let mut current_row = 0;
         for (pos, token) in self.map.indexed_iter() {
             let pos = [pos.0, pos.1];
@@ -203,8 +172,13 @@ impl Puzzle {
             }
             print!(
                 "{}",
-                if state.positions_set.contains(&pos) {
-                    "O"
+                if let Some(direction) = state.directions[pos] {
+                    match direction {
+                        Direction::Down => "v",
+                        Direction::Up => "^",
+                        Direction::Left => "<",
+                        Direction::Right => ">",
+                    }
                 } else {
                     match token {
                         Token::None => ".",
@@ -221,7 +195,7 @@ fn main() {
     let puzzle = include_str!("16.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process(false);
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 66404);
 }
 
 #[cfg(test)]
