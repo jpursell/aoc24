@@ -69,37 +69,41 @@ impl FromStr for Puzzle {
     }
 }
 
+const DIRECTIONS: [Direction;4] = [Direction::Up, Direction::Down, Direction::Left, Direction::Right];
+
+struct State {
+    positions_vec: Vec<[usize;2]>,
+    positions_set: BTreeSet<[usize;2]>,
+    scores: Vec<usize>,
+    directions: Vec<Direction>,
+    print: bool,
+    min_score: Option<usize>,
+}
 impl Puzzle {
     fn process(&self, print: bool) -> usize {
-        let direction = Direction::Right;
-        let mut positions_set = BTreeSet::<[usize; 2]>::new();
-        positions_set.insert(self.start);
-        let mut positions_vec = vec![self.start];
-        self.find_lowest_score(direction, &mut positions_set, &mut positions_vec, 0, print)
-            .unwrap()
+        let mut state = State{
+            positions_set: positions_set::BTreeSet::from([self.start]),
+            positions_vec: vec![self.start],
+            scores: vec![0],
+            directions: vec![Direction::Right],
+            print
+            min_score: None,
+        };
+        self.find_lowest_score(&mut state);
+        state.min_score.unwrap()
     }
     fn find_lowest_score(
         &self,
-        current_direction: Direction,
-        positions_set: &mut BTreeSet<[usize; 2]>,
-        positions_vec: &mut Vec<[usize; 2]>,
-        current_score: usize,
-        print: bool,
-    ) -> Option<usize> {
-        let mut min_score = None;
-        for next_direction in [
-            Direction::Down,
-            Direction::Up,
-            Direction::Left,
-            Direction::Right,
-        ] {
+        state: &mut State,
+    ) {
+        for next_direction in DIRECTIONS {
             {
-                let next_position = next_direction.position_from(positions_vec.last().unwrap());
+                let next_position = next_direction.position_from(state.positions_vec.last().unwrap());
                 if next_position.is_none() {
                     continue;
                 }
                 let next_position = next_position.unwrap();
-                if positions_set.contains(&next_position) {
+                if state.positions_set.contains(&next_position) {
                     continue;
                 }
                 let next_token = self.map.get(next_position);
@@ -109,23 +113,25 @@ impl Puzzle {
                 if matches!(next_token.unwrap(), Token::Wall) {
                     continue;
                 }
-                positions_vec.push(next_position);
-                positions_set.insert(next_position);
+                state.positions_vec.push(next_position);
+                state.positions_set.insert(next_position);
             }
             // we have a valid move at this point to we need to update our state
-            let next_score = if next_direction == current_direction {
-                current_score + 1
+            if &next_direction == state.directions.last().unwrap() {
+                state.scores.push(state.scores.last().unwrap() +1);
             } else {
-                current_score + 1001
+                state.scores.push(state.scores.last().unwrap()+ 1001);
             };
+            state.directions.push(next_direction);
+            todo!()
             if positions_vec.last().unwrap() == &self.end {
                 if print {
                     println!();
                     println!("Score: {}", next_score);
                     self.print_path(positions_set);
                 }
-                let pos = positions_vec.pop().unwrap();
-                positions_set.remove(&pos);
+                let pos = state.positions_vec.pop().unwrap();
+                state.positions_set.remove(&pos);
                 return Some(next_score);
             }
             if let Some(next_min_score) = self.find_lowest_score(
