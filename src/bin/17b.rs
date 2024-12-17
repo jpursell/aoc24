@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+#[derive(Debug)]
 enum Instruction {
     Adv(usize),
     Bxl(usize),
@@ -33,6 +34,31 @@ struct Computer {
 }
 
 impl Computer {
+    // return true if output is consumed
+    fn run_instruction_reverse(&mut self, program: &[usize], output: usize) -> bool {
+        if self.instruction_pointer == 0 {
+            self.instruction_pointer = program.len() - 4;
+        } else {
+            self.instruction_pointer -= 2;
+        }
+        let instruction = Instruction::new(
+            program[self.instruction_pointer],
+            program[self.instruction_pointer + 1],
+        );
+        dbg!(&instruction);
+        dbg!(&self.registers);
+        dbg!(&self.instruction_pointer);
+        match instruction {
+            Instruction::Adv(x) => self.adv_reverse(x),
+            Instruction::Bxl(_) => todo!(),
+            Instruction::Bst(_) => todo!(),
+            Instruction::Jnz(_) => todo!(),
+            Instruction::Bxc(x) => self.bxc_reverse(x),
+            Instruction::Out(x) => self.out_reverse(x, output),
+            Instruction::Bdv(_) => todo!(),
+            Instruction::Cdv(_) => todo!(),
+        }
+    }
     fn run_instruction(&mut self, program: &[usize]) -> Option<usize> {
         let instruction = Instruction::new(
             program[self.instruction_pointer],
@@ -57,10 +83,33 @@ impl Computer {
             _ => panic!(),
         }
     }
+    fn resolve_combo_reverse(&mut self, combo: usize, output: usize) {
+        match combo {
+            0..=3 => (),
+            4..=6 => {
+                // just set the lower 3 bits
+                self.registers[combo - 4] -= self.registers[combo - 4] % 8;
+                self.registers[combo - 4] += output;
+            }
+            _ => panic!(),
+        }
+    }
     fn adv(&mut self, combo: usize) -> Option<usize> {
         let combo: usize = self.resolve_combo(combo);
         self.registers[0] /= 2_usize.pow(combo as u32);
         None
+    }
+    fn adv_reverse(&mut self, combo: usize) -> bool {
+        match combo {
+            0..=3 => {
+                self.registers[0] *= 2_usize.pow(combo as u32);
+            }
+            4..=6 => {
+                todo!();
+            }
+            _ => panic!(),
+        }
+        false
     }
     fn bxl(&mut self, literal: usize) -> Option<usize> {
         self.registers[1] ^= literal;
@@ -81,8 +130,17 @@ impl Computer {
         self.registers[1] ^= self.registers[2];
         None
     }
+    fn bxc_reverse(&mut self, _literal: usize) -> bool {
+        self.registers[1] ^= self.registers[2];
+        false
+    }
     fn out(&mut self, combo: usize) -> Option<usize> {
         Some(self.resolve_combo(combo) % 8)
+    }
+    fn out_reverse(&mut self, combo: usize, output: usize) -> bool {
+        dbg!(&output);
+        self.resolve_combo_reverse(combo, output);
+        true
     }
     fn bdv(&mut self, combo: usize) -> Option<usize> {
         let combo: usize = self.resolve_combo(combo);
@@ -131,34 +189,18 @@ impl FromStr for Puzzle {
 }
 
 impl Puzzle {
-    fn try_reg_a(&self, reg_a: usize) -> bool {
+    fn process(&self) -> usize {
         let mut computer = Computer {
-            registers: [reg_a, self.registers[1], self.registers[2]],
+            registers: [0, 0, 0],
             instruction_pointer: 0,
         };
-        let mut expected = self.program.iter();
-        while !computer.halted(&self.program) {
-            if let Some(o) = computer.run_instruction(&self.program) {
-                match expected.next() {
-                    Some(next) => {
-                        if next != &o {
-                            return false;
-                        }
-                    }
-                    None => {
-                        return false;
-                    }
-                }
-            }
+        for desired_output in self.program.iter().rev() {
+            while !computer.run_instruction_reverse(&self.program, *desired_output) {}
         }
-        expected.next().is_none()
-    }
-    fn process(&self) -> usize {
-        let mut a = 0;
-        while !self.try_reg_a(a) {
-            a += 1;
+        while computer.instruction_pointer != 0 {
+            assert!(!computer.run_instruction_reverse(&self.program, 0));
         }
-        a
+        computer.registers[0]
     }
 }
 
