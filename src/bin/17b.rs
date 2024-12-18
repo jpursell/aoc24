@@ -337,4 +337,21 @@ mod tests {
         computer.run_instruction_reverse(program, 0);
         assert_eq!(computer.registers[0], start_registers[0]);
     }
+    
+    #[test]
+    fn test_bxl_reverse() {
+        let start_registers = [0, 5, 0];
+        let mut computer = Computer {
+            registers: start_registers,
+            instruction_pointer: 0,
+        };
+        let program: &[usize] = &[1, 3];
+        // reg[1] ^= 3
+        computer.run_instruction(program);
+        assert_eq!(computer.registers[1], 6);
+        assert_eq!(computer.instruction_pointer, 2);
+        computer.run_instruction_reverse(program, 0);
+        assert_eq!(computer.registers[1], start_registers[1]);
+        assert_eq!(computer.instruction_pointer, 0);
+    }
 }

@@ -37,3 +37,6 @@ what if we ran it backwards? the output comes from register[1] and we know what
 that should be modulo 8, so we could just set that maybe. Then set the other
 registers to 0 I guess and see what you end up with after it eats all the
 "output" in reverse.
+
+I tried making reverse unit tests and the cdv(5) seems to be non-reversable, so
+maybe I need to look at the program as a whole and try to reverse it.
