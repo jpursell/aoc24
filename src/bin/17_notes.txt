@@ -40,3 +40,31 @@ registers to 0 I guess and see what you end up with after it eats all the
 
 I tried making reverse unit tests and the cdv(5) seems to be non-reversable, so
 maybe I need to look at the program as a whole and try to reverse it.
+
+Ok, looking at the above program some more, I can see that it just chunks
+through reg[0] 3 bits at a time. The output is mostly a function of the last 3
+bits of reg[0] except for the line
+
+    reg[2] = reg[0] / 2.pow(reg[1])
+
+where we are right shifting reg[0] by the amount in reg[1] and assigning that to
+reg[2]. That will contain bits from higher up in reg[0], then in this line
+
+    reg[1] ^= reg[2]
+
+We will be effectivly using the last 3 bits of reg[2] to flip our output bits.
+
+So how do we figure out which 3 bits come from above?
+
+We shift reg[0] by (reg[0] % 8) ^ 3
+
+0 -> 3
+1 -> 2
+2 -> 1
+3 -> 0
+4 -> 7
+5 -> 6
+6 -> 5
+7 -> 4
+
+So if the last 3 bits or reg[0] end in a 4, we are shifting it all the way over 7 bits.
