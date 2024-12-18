@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug)]
 enum Instruction {
@@ -10,6 +10,22 @@ enum Instruction {
     Out(usize),
     Bdv(usize),
     Cdv(usize),
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // write!(f, "{}")
+        match self {
+            Instruction::Adv(x) => write!(f, "adv({})", x),
+            Instruction::Bxl(x) => write!(f, "bxl({})", x),
+            Instruction::Bst(x) => write!(f, "bst({})", x),
+            Instruction::Jnz(x) => write!(f, "jnz({})", x),
+            Instruction::Bxc(x) => write!(f, "bxc({})", x),
+            Instruction::Out(x) => write!(f, "out({})", x),
+            Instruction::Bdv(x) => write!(f, "bdv({})", x),
+            Instruction::Cdv(x) => write!(f, "cdv({})", x),
+        }
+    }
 }
 
 impl Instruction {
@@ -45,24 +61,38 @@ impl Computer {
             program[self.instruction_pointer],
             program[self.instruction_pointer + 1],
         );
-        dbg!(&instruction);
-        dbg!(&self.registers);
-        dbg!(&self.instruction_pointer);
+        println!(
+            "DEBUG: ins: {}, reg: [{}, {}, {}], iptr: {}, out: {}",
+            instruction,
+            self.registers[0],
+            self.registers[1],
+            self.registers[2],
+            self.instruction_pointer,
+            output
+        );
         match instruction {
             Instruction::Adv(x) => self.adv_reverse(x),
-            Instruction::Bxl(_) => todo!(),
-            Instruction::Bst(_) => todo!(),
+            Instruction::Bxl(x) => self.bxl_reverse(x),
+            Instruction::Bst(x) => self.bst_reverse(x),
             Instruction::Jnz(_) => todo!(),
             Instruction::Bxc(x) => self.bxc_reverse(x),
             Instruction::Out(x) => self.out_reverse(x, output),
             Instruction::Bdv(_) => todo!(),
-            Instruction::Cdv(_) => todo!(),
+            Instruction::Cdv(x) => self.cdv_reverse(x),
         }
     }
     fn run_instruction(&mut self, program: &[usize]) -> Option<usize> {
         let instruction = Instruction::new(
             program[self.instruction_pointer],
             program[self.instruction_pointer + 1],
+        );
+        println!(
+            "DEBUG: ins: {}, reg: [{}, {}, {}], iptr: {}",
+            instruction,
+            self.registers[0],
+            self.registers[1],
+            self.registers[2],
+            self.instruction_pointer,
         );
         self.instruction_pointer += 2;
         match instruction {
@@ -115,10 +145,25 @@ impl Computer {
         self.registers[1] ^= literal;
         None
     }
+    fn bxl_reverse(&mut self, literal: usize) -> bool {
+        self.registers[1] ^= literal;
+        false
+    }
     fn bst(&mut self, combo: usize) -> Option<usize> {
         let combo: usize = self.resolve_combo(combo);
         self.registers[1] = combo % 8;
         None
+    }
+    fn bst_reverse(&mut self, combo: usize) -> bool {
+        match combo {
+            0..=3 => todo!(),
+            4..=6 => {
+                self.registers[4 - combo] -= self.registers[4 - combo] % 8;
+                self.registers[4 - combo] += self.registers[1] % 8;
+            }
+            _ => panic!(),
+        }
+        false
     }
     fn jnz(&mut self, literal: usize) -> Option<usize> {
         if self.registers[0] != 0 {
@@ -138,7 +183,6 @@ impl Computer {
         Some(self.resolve_combo(combo) % 8)
     }
     fn out_reverse(&mut self, combo: usize, output: usize) -> bool {
-        dbg!(&output);
         self.resolve_combo_reverse(combo, output);
         true
     }
@@ -151,6 +195,26 @@ impl Computer {
         let combo: usize = self.resolve_combo(combo);
         self.registers[2] = self.registers[0] / 2_usize.pow(combo as u32);
         None
+    }
+    fn cdv_reverse(&mut self, combo: usize) -> bool {
+        // example of what happens
+        // reg[2] = reg[0] / 2.pow(reg[1])
+        //
+        // this is tough. I'm going to try updating reg[0] from reg[2]
+        // reg[0] = reg[2] * 2.pow(reg[1])
+        //
+        // that did not work, try updating reg[1]?
+        // reg[1] = log2(reg[0]/reg[2])
+        // no... in my case that would be a divide by zero
+        match combo {
+            0..=3 => todo!(),
+            4..=6 => {
+                self.registers[0] =
+                    self.registers[2] * 2_usize.pow(self.registers[combo - 4] as u32);
+            }
+            _ => panic!(),
+        }
+        false
     }
     fn halted(&self, program: &[usize]) -> bool {
         self.instruction_pointer >= program.len()
@@ -217,7 +281,6 @@ mod tests {
     #[test]
     fn test_b() {
         let out = include_str!("17_test_b.txt").parse::<Puzzle>().unwrap();
-        dbg!(&out);
         let out = out.process();
         assert_eq!(out, 117440);
     }
@@ -256,5 +319,22 @@ mod tests {
         let program = vec![1, 7];
         computer.run_instruction(&program);
         assert_eq!(computer.registers[1], 26);
+    }
+
+    #[test]
+    fn test_bst_reverse() {
+        let start_registers = [15, 0, 0];
+        let mut computer = Computer {
+            registers: start_registers,
+            instruction_pointer: 0,
+        };
+        let program: &[usize] = &[2, 4];
+        // reg[1] = reg[0] % 8
+        computer.run_instruction(program);
+        // mess up the bits on purpose
+        computer.registers[0] = 9;
+        // should assign those 3 bits back
+        computer.run_instruction_reverse(program, 0);
+        assert_eq!(computer.registers[0], start_registers[0]);
     }
 }
