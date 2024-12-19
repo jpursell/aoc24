@@ -8,33 +8,75 @@ enum Token {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
+enum Move {
+    Forward,
+    Clockwise,
+    CounterClockwise,
+}
+#[derive(Debug, Clone, Copy)]
 enum Direction {
     Up,
+    Right,
     Down,
     Left,
-    Right,
 }
-impl Direction {
-    fn position_from(&self, position: &[usize; 2]) -> Option<[usize; 2]> {
-        if matches!(self, Direction::Up) && position[0] == 0
-            || matches!(self, Direction::Left) && position[1] == 0
-        {
-            None
-        } else {
-            match self {
-                Direction::Up => Some([position[0] - 1, position[1]]),
-                Direction::Down => Some([position[0] + 1, position[1]]),
-                Direction::Left => Some([position[0], position[1] - 1]),
-                Direction::Right => Some([position[0], position[1] + 1]),
-            }
+impl From<Direction> for usize {
+    fn from(value: Direction) -> Self {
+        match value {
+            Direction::Up => 0,
+            Direction::Right => 1,
+            Direction::Down => 2,
+            Direction::Left => 3,
         }
     }
-    fn reverse(&self) -> Direction {
+}
+impl From<usize> for Direction {
+    fn from(value: usize) -> Self {
+        match value {
+            0 => Direction::Up,
+            1 => Direction::Right,
+            2 => Direction::Down,
+            3 => Direction::Left,
+            _ => panic!(),
+        }
+    }
+}
+// impl Direction {
+//     fn rotate_clockwise(&self) -> Self {
+//         let val: usize = (*self).into();
+//         (val + 1).into()
+//     }
+//     fn rotate_counter_clockwise(&self) -> Self {
+//         let val: usize = (*self).into();
+//         (val - 1).into()
+//     }
+// }
+impl Move {
+    fn position_from(&self, position: &[usize; 3]) -> Option<[usize; 3]> {
         match self {
-            Direction::Up => Direction::Down,
-            Direction::Down => Direction::Up,
-            Direction::Left => Direction::Right,
-            Direction::Right => Direction::Left,
+            Move::Forward => {
+                let direction = Direction::from(position[2]);
+                if matches!(direction, Direction::Up) && position[0] == 0
+                    || matches!(direction, Direction::Left) && position[1] == 0
+                {
+                    None
+                } else {
+                    match direction {
+                        Direction::Up => Some([position[0] - 1, position[1], position[2]]),
+                        Direction::Down => Some([position[0] + 1, position[1], position[2]]),
+                        Direction::Left => Some([position[0], position[1] - 1, position[2]]),
+                        Direction::Right => Some([position[0], position[1] + 1, position[2]]),
+                    }
+                }
+            }
+            Move::Clockwise => Some([position[0], position[1], (position[2] + 1) % 4]),
+            Move::CounterClockwise => {
+                if position[2] == 0 {
+                    Some([position[0], position[1], 3])
+                } else {
+                    Some([position[0], position[1], position[2] - 1])
+                }
+            }
         }
     }
 }
@@ -77,32 +119,26 @@ impl FromStr for Puzzle {
     }
 }
 
-const DIRECTIONS: [Direction; 4] = [
-    Direction::Up,
-    Direction::Down,
-    Direction::Left,
-    Direction::Right,
-];
+const MOVES: [Move; 3] = [Move::Clockwise, Move::CounterClockwise, Move::Forward];
 
 struct State {
-    scores: Array2<Option<usize>>,
-    directions: Array2<Vec<Direction>>,
+    scores: Array3<Option<usize>>,
+    previous: Array3<Vec<[usize; 3]>>,
     steps: usize,
 }
 
 impl Puzzle {
     fn process(&self, print: bool) -> usize {
+        let map_shape = self.map.shape();
+        let records_shape = [map_shape[0], map_shape[1], 4];
         let mut state = State {
-            scores: Array2::<Option<usize>>::from_elem(self.map.raw_dim(), None),
-            directions: Array2::<Vec<Direction>>::from_elem(
-                self.map.raw_dim(),
-                Vec::with_capacity(3),
-            ),
+            scores: Array3::<Option<usize>>::from_elem(records_shape, None),
+            previous: Array3::<Vec<[usize; 3]>>::from_elem(records_shape, Vec::with_capacity(3)),
             steps: 0,
         };
-        state.scores[self.start] = Some(0);
-        state.directions[self.start].push(Direction::Right);
-        let mut ends = [vec![self.start], Vec::new()];
+        let start = [self.start[0], self.start[1], Direction::Right.into()];
+        state.scores[start] = Some(0);
+        let mut ends = [vec![start], Vec::new()];
         loop {
             let (e0, e1) = ends.split_at_mut(1);
             let (current, next) = if state.steps % 2 == 0 {
@@ -115,102 +151,128 @@ impl Puzzle {
                 break;
             }
             for pos in current {
-                next.append(&mut self.process_pos(pos, &mut state));
+                next.append(&mut self.process_pos(*pos, &mut state));
             }
             state.steps += 1;
         }
         if print {
             self.print_path(&state);
         }
-        self.trace_back(&state, self.end).len()
+        self.trace_back(&state, &self.best_end_position(&state).unwrap())
+            .iter()
+            .map(|x| [x[0], x[1]])
+            .collect::<BTreeSet<[usize; 2]>>()
+            .len()
     }
-    fn trace_back(&self, state: &State, pos: [usize; 2]) -> BTreeSet<[usize; 2]> {
-        let mut out = BTreeSet::from([pos]);
-        if pos == self.start {
+    fn best_end_position(&self, state: &State) -> Option<[usize; 3]> {
+        let mut lowest_score = None;
+        let mut best_position = None;
+        for i in 0..4 {
+            let pos = [self.end[0], self.end[1], i];
+            if let Some(score) = state.scores[pos] {
+                if let Some(best) = lowest_score {
+                    if score < best {
+                        lowest_score = Some(score);
+                        best_position = Some(pos);
+                    }
+                } else {
+                    lowest_score = Some(score);
+                    best_position = Some(pos);
+                }
+            }
+        }
+        best_position
+    }
+    fn trace_back(&self, state: &State, pos: &[usize; 3]) -> BTreeSet<[usize; 3]> {
+        let mut out = BTreeSet::from([*pos]);
+        if pos[0] == self.start[0] && pos[1] == self.start[1] {
             return out;
         }
-        for direction in &state.directions[pos] {
-            let previous = direction.reverse().position_from(&pos).unwrap();
+        for previous in &state.previous[*pos] {
             out.append(&mut self.trace_back(state, previous));
         }
         out
     }
-    fn process_pos(&self, pos: &[usize; 2], state: &mut State) -> Vec<[usize; 2]> {
+    fn process_pos(&self, pos: [usize; 3], state: &mut State) -> Vec<[usize; 3]> {
         let mut next_ends = Vec::new();
-        for next_direction in self.find_possible_dirs(pos) {
-            let next_position = next_direction.position_from(pos).unwrap();
+        for (next_move, next_position) in self.find_possible_next_positions(&pos) {
             // let current_directions = state.directions[*pos]
-            let next_score = if state.directions[*pos].iter().any(|d| d == &next_direction) {
-                state.scores[*pos].unwrap() + 1
+            let next_score = if matches!(next_move, Move::Forward) {
+                state.scores[pos].unwrap() + 1
             } else {
-                state.scores[*pos].unwrap() + 1001
+                state.scores[pos].unwrap() + 1000
             };
-            if let Some(score) = state.scores[next_position] {
-                match next_score.cmp(&score) {
+            if let Some(existing_score) = state.scores[next_position] {
+                match next_score.cmp(&existing_score) {
                     Ordering::Less => {
-                        println!(
-                            "DEBUG: order less: {:?}->{:?} {} < {}",
-                            pos, next_position, next_score, score
-                        );
+                        // println!(
+                        //     "DEBUG: order less: {:?}->{:?} {} < {}",
+                        //     pos, next_position, next_score, existing_score
+                        // );
                         next_ends.push(next_position);
                         state.scores[next_position] = Some(next_score);
-                        state.directions[next_position].clear();
-                        state.directions[next_position].push(next_direction);
+                        state.previous[next_position].clear();
+                        state.previous[next_position].push(pos);
                     }
                     Ordering::Equal => {
-                        println!(
-                            "DEBUG: order equal: {:?}->{:?} {} == {}",
-                            pos, next_position, next_score, score
-                        );
-                        state.directions[next_position].push(next_direction);
+                        // println!(
+                        //     "DEBUG: order equal: {:?}->{:?} {} == {}",
+                        //     pos, next_position, next_score, existing_score
+                        // );
+                        state.previous[next_position].push(pos);
                     }
                     Ordering::Greater => {
-                        println!(
-                            "DEBUG: order greater: {:?}->{:?} {} > {}",
-                            pos, next_position, next_score, score
-                        );
+                        // println!(
+                        //     "DEBUG: order greater: {:?}->{:?} {} > {}",
+                        //     pos, next_position, next_score, existing_score
+                        // );
                     }
                 }
             } else {
-                println!(
-                    "DEBUG: new item: {:?}->{:?} {}",
-                    pos, next_position, next_score
-                );
+                // println!(
+                //     "DEBUG: new item: {:?}->{:?} {}",
+                //     pos, next_position, next_score
+                // );
                 next_ends.push(next_position);
                 state.scores[next_position] = Some(next_score);
-                state.directions[next_position].push(next_direction);
+                state.previous[next_position].push(pos);
             }
         }
         next_ends
     }
-    fn find_possible_dirs(&self, pos: &[usize; 2]) -> Vec<Direction> {
-        let mut possible_directions = Vec::new();
-        for next_direction in DIRECTIONS {
-            let next_position = next_direction.position_from(pos);
+    fn find_possible_next_positions(&self, pos: &[usize; 3]) -> Vec<(Move, [usize; 3])> {
+        let mut possible_positions = Vec::new();
+        for next_move in MOVES {
+            let next_position = next_move.position_from(pos);
             if next_position.is_none() {
                 continue;
             }
             let next_position = next_position.unwrap();
-            let next_token = self.map.get(next_position);
+            let next_position_2d = [next_position[0], next_position[1]];
+            let next_token = self.map.get(next_position_2d);
             if next_token.is_none() {
                 continue;
             }
             if matches!(next_token.unwrap(), Token::Wall) {
                 continue;
             }
-            possible_directions.push(next_direction);
+            possible_positions.push((next_move, next_position));
         }
-        possible_directions
+        possible_positions
     }
     fn print_path(&self, state: &State) {
-        let path = self.trace_back(state, self.end);
-        let score = state.scores[self.end];
+        let path = self
+            .trace_back(state, &self.best_end_position(state).unwrap())
+            .iter()
+            .map(|x| [x[0], x[1]])
+            .collect::<BTreeSet<[usize; 2]>>();
+        // let score = state.scores[self.end];
         println!();
-        if score.is_none() {
-            println!("Score: None");
-        } else {
-            println!("Score: {}", score.unwrap());
-        }
+        // if score.is_none() {
+        //     println!("Score: None");
+        // } else {
+        //     println!("Score: {}", score.unwrap());
+        // }
         let mut current_row = 0;
         for (pos, token) in self.map.indexed_iter() {
             let pos = [pos.0, pos.1];
@@ -219,7 +281,7 @@ impl Puzzle {
                 current_row = pos[0];
             }
             if path.contains(&pos) {
-                print!("{}", state.directions[pos].len());
+                print!("O");
             } else {
                 print!(
                     "{}",
@@ -238,7 +300,7 @@ fn main() {
     let puzzle = include_str!("16.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process(false);
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 433);
 }
 
 #[cfg(test)]
