@@ -36,7 +36,9 @@ struct Puzzle {
     map: Array2<Token>,
     start: [usize; 2],
     end: [usize; 2],
-    steps: Array2<Option<usize>>,
+    steps_map: Array2<Option<usize>>,
+    positions: Vec<[usize; 2]>,
+    cheats: Vec<usize>,
 }
 
 impl FromStr for Puzzle {
@@ -67,7 +69,14 @@ impl FromStr for Puzzle {
         }
         let map = Array2::from_shape_vec((nrows, ncols), map).unwrap();
         let steps = Array2::from_elem(map.raw_dim(), None);
-        Ok(Puzzle { map, start, end,steps })
+        Ok(Puzzle {
+            map,
+            start,
+            end,
+            steps_map: steps,
+            positions: Vec::new(),
+            cheats: Vec::new(),
+        })
     }
 }
 
@@ -86,14 +95,37 @@ const DIRECTIONS: [Direction; 4] = [
 
 impl Puzzle {
     fn solve_steps(&mut self) {
-        self.steps.iter_mut().for_each(|x| *x=None);
-        self.steps[self.start] = Some(0);
+        self.steps_map.iter_mut().for_each(|x| *x = None);
+        self.steps_map[self.start] = Some(0);
         let mut pos = self.start;
         let mut steps = 0;
+        self.positions.push(pos);
         while pos != self.end {
             pos = self.find_next_pos(&pos);
+            self.positions.push(pos);
             steps += 1;
-            self.steps[pos] = Some(steps);
+            self.steps_map[pos] = Some(steps);
+        }
+    }
+    fn find_cheats(&mut self) {
+        for pos in self.positions {
+            for direction in DIRECTIONS {
+                let cheat_pos = direction.position_from(&pos);
+                if cheat_pos.is_none() {
+                    continue;
+                }
+                let cheat_pos = direction.position_from(&cheat_pos.unwrap());
+                if cheat_pos.is_none() {
+                    continue;
+                }
+                let cheat_steps = self.steps_map.get(cheat_pos.unwrap());
+                if cheat_steps.is_none() || cheat_steps.unwrap().is_none() {
+                    continue;
+                }
+                let cheat_steps = cheat_steps.unwrap().unwrap();
+                todo!("check if shorter")
+            }
+            todo!()
         }
     }
     fn process(&self, time_saved: usize) -> usize {
@@ -140,7 +172,7 @@ impl Puzzle {
             if matches!(next_token.unwrap(), Token::Wall) {
                 continue;
             }
-            if self.steps[potential_next_pos].is_some() {
+            if self.steps_map[potential_next_pos].is_some() {
                 continue;
             }
             if next_pos.is_some() {
