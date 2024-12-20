@@ -108,7 +108,7 @@ impl Puzzle {
         }
     }
     fn find_cheats(&mut self) {
-        for pos in self.positions {
+        for pos in &self.positions {
             for direction in DIRECTIONS {
                 let cheat_pos = direction.position_from(&pos);
                 if cheat_pos.is_none() {
@@ -123,9 +123,11 @@ impl Puzzle {
                     continue;
                 }
                 let cheat_steps = cheat_steps.unwrap().unwrap();
-                todo!("check if shorter")
+                if cheat_steps < self.steps_map[*pos].unwrap() + 2 {
+                    let improvement = self.steps_map[*pos].unwrap() + 2  - cheat_steps;
+                    self.cheats.push(improvement);
+                }
             }
-            todo!()
         }
     }
     fn process(&self, time_saved: usize) -> usize {
@@ -227,22 +229,29 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
+    use counter::Counter;
+
     use super::*;
     #[test]
     fn test() {
-        let out = include_str!("20_test.txt").parse::<Puzzle>().unwrap();
-        dbg!(&out);
-        assert_eq!(14, out.process_test(2));
-        assert_eq!(14, out.process_test(4));
-        assert_eq!(2, out.process_test(6));
-        assert_eq!(4, out.process_test(8));
-        assert_eq!(2, out.process_test(10));
-        assert_eq!(3, out.process_test(12));
-        assert_eq!(1, out.process_test(20));
-        assert_eq!(1, out.process_test(36));
-        assert_eq!(1, out.process_test(38));
-        assert_eq!(1, out.process_test(40));
-        assert_eq!(1, out.process_test(64));
+        let mut out = include_str!("20_test.txt").parse::<Puzzle>().unwrap();
+        out.solve_steps();
+        for irow in out.
+        out.find_cheats();
+        let cheat_count = out.cheats.iter().map(|x|*x).collect::<Counter<usize>>();
+
+        dbg!(&cheat_count);
+        assert_eq!(14, cheat_count[&2]);
+        assert_eq!(14, cheat_count[&4]);
+        assert_eq!(2, cheat_count[&6]);
+        assert_eq!(4, cheat_count[&8]);
+        assert_eq!(2, cheat_count[&10]);
+        assert_eq!(3, cheat_count[&12]);
+        assert_eq!(1, cheat_count[&20]);
+        assert_eq!(1, cheat_count[&36]);
+        assert_eq!(1, cheat_count[&38]);
+        assert_eq!(1, cheat_count[&40]);
+        assert_eq!(1, cheat_count[&64]);
     }
     #[test]
     fn test_solve_steps() {
