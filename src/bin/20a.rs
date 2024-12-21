@@ -87,12 +87,6 @@ const DIRECTIONS: [Direction; 4] = [
     Direction::Right,
 ];
 
-// struct State {
-//     scores: Array2<Option<usize>>,
-//     directions: Array2<Option<Direction>>,
-//     steps: usize,
-// }
-
 impl Puzzle {
     fn solve_steps(&mut self) {
         self.steps_map.iter_mut().for_each(|x| *x = None);
@@ -110,7 +104,7 @@ impl Puzzle {
     fn find_cheats(&mut self) {
         for pos in &self.positions {
             for direction in DIRECTIONS {
-                let cheat_pos = direction.position_from(&pos);
+                let cheat_pos = direction.position_from(pos);
                 if cheat_pos.is_none() {
                     continue;
                 }
@@ -123,42 +117,24 @@ impl Puzzle {
                     continue;
                 }
                 let cheat_steps = cheat_steps.unwrap().unwrap();
-                if cheat_steps < self.steps_map[*pos].unwrap() + 2 {
-                    let improvement = self.steps_map[*pos].unwrap() + 2  - cheat_steps;
+                let current_steps = self.steps_map[*pos].unwrap();
+                if cheat_steps > current_steps + 2 {
+                    let improvement = cheat_steps - (current_steps + 2);
                     self.cheats.push(improvement);
+                    // println!(
+                    //     "Find Cheat {} -> {} , Improvement: {}",
+                    //     current_steps, cheat_steps, improvement
+                    // );
                 }
             }
         }
     }
-    fn process(&self, time_saved: usize) -> usize {
-        0
+    fn process(&mut self, time_saved: usize) -> usize {
+        self.solve_steps();
+        self.print_steps();
+        self.find_cheats();
+        self.cheats.iter().filter(|&x| x >= &time_saved).count()
     }
-    fn process_test(&self, time_saved: usize) -> usize {
-        0
-    }
-    // fn process_pos(&self, pos: &[usize; 2], state: &mut State) -> Vec<[usize; 2]> {
-    //     let mut next_ends = Vec::new();
-    //     for next_direction in self.find_possible_dirs(pos) {
-    //         let next_position = next_direction.position_from(pos).unwrap();
-    //         let next_score = if next_direction == state.directions[*pos].unwrap() {
-    //             state.scores[*pos].unwrap() + 1
-    //         } else {
-    //             state.scores[*pos].unwrap() + 1001
-    //         };
-    //         if let Some(score) = state.scores[next_position] {
-    //             if next_score < score {
-    //                 next_ends.push(next_position);
-    //                 state.scores[next_position] = Some(next_score);
-    //                 state.directions[next_position] = Some(next_direction);
-    //             }
-    //         } else {
-    //             next_ends.push(next_position);
-    //             state.scores[next_position] = Some(next_score);
-    //             state.directions[next_position] = Some(next_direction);
-    //         }
-    //     }
-    //     next_ends
-    // }
     fn find_next_pos(&self, pos: &[usize; 2]) -> [usize; 2] {
         let mut next_pos = None;
         for next_direction in DIRECTIONS {
@@ -184,47 +160,26 @@ impl Puzzle {
         }
         next_pos.unwrap()
     }
-    // fn print_path(&self, state: &State) {
-    //     let score = state.scores[self.end];
-    //     println!();
-    //     if score.is_none() {
-    //         println!("Score: None");
-    //     } else {
-    //         println!("Score: {}", score.unwrap());
-    //     }
-    //     let mut current_row = 0;
-    //     for (pos, token) in self.map.indexed_iter() {
-    //         let pos = [pos.0, pos.1];
-    //         if current_row != pos[0] {
-    //             println!();
-    //             current_row = pos[0];
-    //         }
-    //         print!(
-    //             "{}",
-    //             if let Some(direction) = state.directions[pos] {
-    //                 match direction {
-    //                     Direction::Down => "v",
-    //                     Direction::Up => "^",
-    //                     Direction::Left => "<",
-    //                     Direction::Right => ">",
-    //                 }
-    //             } else {
-    //                 match token {
-    //                     Token::None => ".",
-    //                     Token::Wall => "#",
-    //                 }
-    //             }
-    //         );
-    //     }
-    //     println!();
-    // }
+    fn print_steps(&self) {
+        for irow in 0..self.steps_map.shape()[0] {
+            for icol in 0..self.steps_map.shape()[1] {
+                if let Some(steps) = self.steps_map[[irow, icol]] {
+                    print!("{:02} ", steps);
+                } else {
+                    print!("   ");
+                }
+            }
+            println!();
+        }
+        println!();
+    }
 }
 
 fn main() {
-    let puzzle = include_str!("20.txt").parse::<Puzzle>().unwrap();
+    let mut puzzle = include_str!("20.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process(100);
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 1346);
 }
 
 #[cfg(test)]
@@ -236,9 +191,9 @@ mod tests {
     fn test() {
         let mut out = include_str!("20_test.txt").parse::<Puzzle>().unwrap();
         out.solve_steps();
-        for irow in out.
+        out.print_steps();
         out.find_cheats();
-        let cheat_count = out.cheats.iter().map(|x|*x).collect::<Counter<usize>>();
+        let cheat_count = out.cheats.iter().map(|x| *x).collect::<Counter<usize>>();
 
         dbg!(&cheat_count);
         assert_eq!(14, cheat_count[&2]);
