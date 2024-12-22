@@ -1,5 +1,5 @@
-use std::{collections::BTreeMap, str::FromStr};
 use ndarray::prelude::*;
+use std::{collections::BTreeMap, str::FromStr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum NumericButton {
@@ -72,7 +72,7 @@ impl From<usize> for NumericButton {
 //     }
 // }
 
-const NUMERIC_BUTTONS: [NumericButton;10] = [
+const NUMERIC_BUTTONS: [NumericButton; 10] = [
     NumericButton::One,
     NumericButton::Two,
     NumericButton::Three,
@@ -92,19 +92,20 @@ impl NumericButton {
             [Some(4), Some(5), Some(6)],
             [Some(1), Some(2), Some(3)],
             [None, Some(0), Some(10)],
-        ].mapv(|v|match v{
+        ]
+        .mapv(|v| match v {
             None => None,
             Some(v) => Some(v.into()),
         })
     }
-    fn find_routes() -> BTreeMap<[Self;2],Vec<Direction>> {
+    fn find_routes() -> BTreeMap<[Self; 2], Vec<Direction>> {
         let layout = Self::layout();
-        let find_button = |button_to_find: &Self| -> [usize;2] {
+        let find_button = |button_to_find: &Self| -> [usize; 2] {
             for (pos, button) in layout.indexed_iter() {
                 if button.is_none() || &button.unwrap() != button_to_find {
                     continue;
                 }
-                return [pos.0, pos.1]
+                return [pos.0, pos.1];
             }
             panic!();
         };
@@ -114,34 +115,34 @@ impl NumericButton {
         }
         BTreeMap::new()
     }
-//     fn list_connections(&self) -> BTreeMap<Direction, Self> {
-//         match self {
-//             NumericButton::Zero => BTreeMap::from([
-//                 (Direction::Right, NumericButton::Activate),
-//                 (Direction::Up, NumericButton::Two),
-//             ]),
-//             NumericButton::One => BTreeMap::from([
-//                 (Direction::Right, NumericButton::Two),
-//                 (Direction::Up, NumericButton::Four),
-//             ]),
-//             NumericButton::Two => BTreeMap::from([
-//                 (Direction::Up, NumericButton::Five),
-//                 (Direction::Right, NumericButton::Three),
-//                 (Direction::Down, NumericButton::Zero),
-//                 (Direction::Left, NumericButton::One),
-//             ]),
-//             NumericButton::Three => BTreeMap::from([
+    //     fn list_connections(&self) -> BTreeMap<Direction, Self> {
+    //         match self {
+    //             NumericButton::Zero => BTreeMap::from([
+    //                 (Direction::Right, NumericButton::Activate),
+    //                 (Direction::Up, NumericButton::Two),
+    //             ]),
+    //             NumericButton::One => BTreeMap::from([
+    //                 (Direction::Right, NumericButton::Two),
+    //                 (Direction::Up, NumericButton::Four),
+    //             ]),
+    //             NumericButton::Two => BTreeMap::from([
+    //                 (Direction::Up, NumericButton::Five),
+    //                 (Direction::Right, NumericButton::Three),
+    //                 (Direction::Down, NumericButton::Zero),
+    //                 (Direction::Left, NumericButton::One),
+    //             ]),
+    //             NumericButton::Three => BTreeMap::from([
 
-//             ]),
-//             NumericButton::Four => todo!(),
-//             NumericButton::Five => todo!(),
-//             NumericButton::Six => todo!(),
-//             NumericButton::Seven => todo!(),
-//             NumericButton::Eight => todo!(),
-//             NumericButton::Nine => todo!(),
-//             NumericButton::Activate => todo!(),
-//         }
-//     }
+    //             ]),
+    //             NumericButton::Four => todo!(),
+    //             NumericButton::Five => todo!(),
+    //             NumericButton::Six => todo!(),
+    //             NumericButton::Seven => todo!(),
+    //             NumericButton::Eight => todo!(),
+    //             NumericButton::Nine => todo!(),
+    //             NumericButton::Activate => todo!(),
+    //         }
+    //     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
