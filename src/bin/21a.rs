@@ -1,5 +1,5 @@
 use ndarray::prelude::*;
-use std::{collections::BTreeMap, str::FromStr};
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum NumericButton {
@@ -85,6 +85,90 @@ const NUMERIC_BUTTONS: [NumericButton; 10] = [
     NumericButton::Activate,
 ];
 
+const DIRECTIONS: [Direction; 4] = [
+    Direction::Up,
+    Direction::Right,
+    Direction::Down,
+    Direction::Left,
+];
+
+struct PathSolver<T> {
+    layout: Array2<T>,
+    seen: Array2<bool>,
+    end: [usize; 2],
+}
+impl<T> PathSolver<T>
+where
+    T: Eq,
+{
+    fn new(layout: Array2<T>) -> Self {
+        let seen = Array2::from_elem(layout.raw_dim(), false);
+        PathSolver {
+            seen,
+            layout,
+            end: [0, 0],
+        }
+    }
+    fn find_button(&self, button_to_find: &T) -> Option<[usize; 2]> {
+        for (pos, button) in self.layout.indexed_iter() {
+            if button == button_to_find {
+                return Some([pos.0, pos.1]);
+            }
+        }
+        None
+    }
+    fn shortest_paths(&mut self, start: &T, end: &T) -> Vec<Vec<Direction>> {
+        let start = self.find_button(start).unwrap();
+        self.end = self.find_button(end).unwrap();
+        let pos = start;
+        self.seen.iter_mut().for_each(|x| *x = false);
+        self.seen[start] = true;
+        let mut potential_paths = Vec::new();
+        for direction in DIRECTIONS {
+            potential_paths.push(self.get_paths(pos, vec![direction]));
+        }
+        Self::combine_paths(potential_paths).unwrap()
+    }
+    fn combine_paths(mut paths: Vec<Option<Vec<Vec<Direction>>>>) -> Option<Vec<Vec<Direction>>> {
+        if !paths.iter().any(|x|x.is_some()) {
+            return None;
+        }
+        let paths: Vec<&mut Vec<Vec<Direction>>> = paths.iter_mut().filter(|f|f.is_some()).map(|x|x.as_mut().unwrap()).collect();
+        let shortest_len = paths.iter().map(|x|x[0].len()).min().unwrap();
+        let mut out: Vec<Vec<Direction>> = Vec::new();
+
+        for mut p in paths {
+            if p[0].len() != shortest_len {
+                continue;
+            }
+            out.append(&mut p);
+        }
+        Some(out)
+    }
+    fn get_paths(&mut self, pos: [usize; 2], path: Vec<Direction>) -> Option<Vec<Vec<Direction>>> {
+        let direction = path.last().unwrap();
+        let next_pos = direction.position_from(pos)?;
+        {
+            let next_seen = self.seen.get_mut(next_pos)?;
+            if *next_seen {
+                return None;
+            }
+            if next_pos == self.end {
+                return Some(vec![path]);
+            }
+            *next_seen = true;
+        }
+        let mut potential_paths = Vec::new();
+        for direction in DIRECTIONS {
+            let mut new_path = path.clone();
+            new_path.push(direction);
+            potential_paths.push(self.get_paths(next_pos, new_path));
+        }
+        self.seen[next_pos] = false;
+        Self::combine_paths(potential_paths)
+    }
+}
+
 impl NumericButton {
     fn layout() -> Array2<Option<Self>> {
         array![
@@ -98,23 +182,37 @@ impl NumericButton {
             Some(v) => Some(v.into()),
         })
     }
-    fn find_routes() -> BTreeMap<[Self; 2], Vec<Direction>> {
-        let layout = Self::layout();
-        let find_button = |button_to_find: &Self| -> [usize; 2] {
-            for (pos, button) in layout.indexed_iter() {
-                if button.is_none() || &button.unwrap() != button_to_find {
-                    continue;
-                }
-                return [pos.0, pos.1];
-            }
-            panic!();
-        };
-        for start in &NUMERIC_BUTTONS {
-            let start_pos = find_button(start);
-            todo!();
-        }
-        BTreeMap::new()
-    }
+    // fn find_routes() -> BTreeMap<[Self; 2], Vec<Direction>> {
+    //     let layout = Self::layout();
+    //     let find_button = |button_to_find: &Self| -> [usize; 2] {
+    //         for (pos, button) in layout.indexed_iter() {
+    //             if button.is_none() || &button.unwrap() != button_to_find {
+    //                 continue;
+    //             }
+    //             return [pos.0, pos.1];
+    //         }
+    //         panic!();
+    //     };
+    //     for start in &NUMERIC_BUTTONS {
+    //         let start_pos = find_button(start);
+    //         let mut seen = Array2::from_elem(layout.raw_dim(), false);
+    //         let mut previous_direction = Array2::from_elem(layout.raw_dim(), None);
+    //         seen[start_pos] = true;
+    //         let mut ends = vec![start_pos];
+    //         for pos in ends {
+    //             for direction in DIRECTIONS {
+    //                 let new_position = direction.position_from(pos);
+    //                 if new_position.is_none()  {
+    //                     continue;
+    //                 }
+    //                 let button =
+    //             }
+    //         }
+    //         todo!();
+    //     }
+    //     BTreeMap::new()
+    // }
+    // fn find_shortest_path()
     //     fn list_connections(&self) -> BTreeMap<Direction, Self> {
     //         match self {
     //             NumericButton::Zero => BTreeMap::from([
@@ -162,6 +260,29 @@ enum Direction {
     Right,
 }
 
+impl Direction {
+    fn position_from(&self, pos: [usize; 2]) -> Option<[usize; 2]> {
+        match self {
+            Direction::Up => {
+                if pos[0] == 0 {
+                    None
+                } else {
+                    Some([pos[0] - 1, pos[1]])
+                }
+            }
+            Direction::Right => Some([pos[0], pos[1] + 1]),
+            Direction::Down => Some([pos[0] + 1, pos[1]]),
+            Direction::Left => {
+                if pos[1] == 0 {
+                    None
+                } else {
+                    Some([pos[0], pos[1] - 1])
+                }
+            }
+        }
+    }
+}
+
 #[derive(Debug)]
 struct Puzzle {
     numbers: Vec<Vec<NumericButton>>,
@@ -200,5 +321,12 @@ mod tests {
         let mut out = include_str!("21_test.txt").parse::<Puzzle>().unwrap();
         dbg!(&out);
         assert_eq!(out.process(), 126384);
+    }
+    #[test]
+    fn test_path_finder() {
+        let mut solver = PathSolver::new(NumericButton::layout());
+        let paths =
+            solver.shortest_paths(&Some(NumericButton::Activate), &Some(NumericButton::Seven));
+        dbg!(paths);
     }
 }
