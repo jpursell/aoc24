@@ -300,8 +300,8 @@ impl Direction {
 #[derive(Debug)]
 struct Puzzle {
     numbers: Vec<Vec<NumericButton>>,
-    numeric_routes: BTreeMap<[NumericButton;2],Vec<Vec<Direction>>>,
-    directional_routes: BTreeMap<[DirectionalButton;2],Vec<Vec<Direction>>>,
+    numeric_routes: BTreeMap<[NumericButton; 2], Vec<Vec<Direction>>>,
+    directional_routes: BTreeMap<[DirectionalButton; 2], Vec<Vec<Direction>>>,
 }
 
 impl FromStr for Puzzle {
@@ -314,7 +314,11 @@ impl FromStr for Puzzle {
             .collect();
         let numeric_routes = NumericButton::find_routes();
         let directional_routes = DirectionalButton::find_routes();
-        Ok(Puzzle { numbers, numeric_routes, directional_routes })
+        Ok(Puzzle {
+            numbers,
+            numeric_routes,
+            directional_routes,
+        })
     }
 }
 
@@ -323,17 +327,17 @@ impl Puzzle {
         for sequence in &self.numbers {
             dbg!(&sequence);
             dbg!(self.map_sequence(sequence));
-            break
+            break;
         }
         0
     }
-    fn map_sequence(&self,sequence: &Vec<NumericButton>) -> Vec<DirectionalButton> {
+    fn map_sequence(&self, sequence: &Vec<NumericButton>) -> Vec<DirectionalButton> {
         let mut pos = NumericButton::Activate;
         let mut out = Vec::new();
         for next_button in sequence {
             dbg!(&[pos, *next_button]);
-            let routes = &self.numeric_routes[&[pos,*next_button]];
-            let mut route:Vec<DirectionalButton> = routes[0].iter().map(|x|(*x).into()).collect();
+            let routes = &self.numeric_routes[&[pos, *next_button]];
+            let mut route: Vec<DirectionalButton> = routes[0].iter().map(|x| (*x).into()).collect();
             route.push(DirectionalButton::Activate);
             out.append(&mut route);
             pos = *next_button;
