@@ -1,5 +1,7 @@
 use std::{
-    collections::{hash_map::Entry, HashMap}, fmt::Display, str::FromStr
+    collections::{hash_map::Entry, HashMap},
+    fmt::Display,
+    str::FromStr,
 };
 
 #[derive(Debug)]
@@ -11,7 +13,11 @@ struct Gate {
 
 impl Display for Gate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {} {} -> {}",self.inputs[0],self.operation, self.inputs[1], self.output)
+        write!(
+            f,
+            "{} {} {} -> {}",
+            self.inputs[0], self.operation, self.inputs[1], self.output
+        )
     }
 }
 
@@ -184,12 +190,11 @@ mod tests {
                 }
             }
             for gate in &puzzle.gates {
-                if gate.output.contains(&num){
+                if gate.output.contains(&num) {
                     println!("{}", gate);
                 }
             }
             println!();
         }
-
     }
 }
