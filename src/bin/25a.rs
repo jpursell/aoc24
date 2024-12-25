@@ -1,28 +1,38 @@
-use std::
-    str::FromStr
-;
-use ndarray::prelude::*;
+use std::str::FromStr;
 
 use itertools::Itertools;
 
 #[derive(Debug)]
-enum Schmatic {
-    Key([usize;5]),
-    Lock([usize;5]),
+struct Lock {
+    heights: [usize; 5],
+}
+#[derive(Debug)]
+struct Key {
+    heights: [usize; 5],
+}
+impl Lock {
+    fn overlap(&self, key: &Key) -> bool {
+        self.heights
+            .iter()
+            .zip(key.heights.iter())
+            .any(|(l, k)| l + k > 5)
+    }
 }
 
 #[derive(Debug)]
 struct Puzzle {
-    schematics: Vec<Schmatic>,
+    locks: Vec<Lock>,
+    keys: Vec<Key>,
 }
 
 impl FromStr for Puzzle {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut schematics = Vec::new();
+        let mut locks = Vec::new();
+        let mut keys = Vec::new();
         for lines in &s.lines().chunks(8) {
-            let mut totals = [0;5];
+            let mut heights = [0; 5];
             let mut first_char = None;
             for line in lines {
                 for (i, char) in line.chars().enumerate() {
@@ -31,35 +41,45 @@ impl FromStr for Puzzle {
                     }
                     match char {
                         '.' => (),
-                        '#' => {totals[i]+=1;}
+                        '#' => {
+                            heights[i] += 1;
+                        }
                         _ => panic!(),
                     }
                 }
             }
-            totals.iter_mut().for_each(|x|{*x-=1;});
-            match first_char.unwrap(){
-                '#' => schematics.push(Schmatic::Lock(totals)),
-                '.' => schematics.push(Schmatic::Key(totals)),
+            heights.iter_mut().for_each(|x| {
+                *x -= 1;
+            });
+            match first_char.unwrap() {
+                '#' => locks.push(Lock { heights }),
+                '.' => keys.push(Key { heights }),
                 _ => panic!(),
             }
         }
-        Ok(Puzzle {
-            schematics
-        })
+        Ok(Puzzle { locks, keys })
     }
 }
 
 impl Puzzle {
     fn process(&self) -> usize {
-        0
+        let mut out = 0;
+        for lock in &self.locks {
+            for key in &self.keys {
+                if !lock.overlap(key) {
+                    out += 1;
+                }
+            }
+        }
+        out
     }
 }
 
 fn main() {
-    let mut puzzle = include_str!("25.txt").parse::<Puzzle>().unwrap();
+    let puzzle = include_str!("25.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 2854);
 }
 
 #[cfg(test)]
@@ -68,8 +88,8 @@ mod tests {
     #[test]
     fn test() {
         let out = include_str!("25_test.txt").parse::<Puzzle>().unwrap();
-        dbg!(&out);
-        // let out = out.process();
-        // assert_eq!(out, );
+        // dbg!(&out);
+        let out = out.process();
+        assert_eq!(out, 3);
     }
 }
