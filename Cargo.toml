@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 counter = "0.6.0"
 itertools = "0.13.0"
+memoize = "0.4.2"
 ndarray = "0.16.1"
 regex = "1.11.1"
