@@ -1,8 +1,8 @@
 use ndarray::prelude::*;
-use std::{collections::BTreeMap, str::FromStr};
+use std::{collections::BTreeMap, fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum NumericButton {
+pub enum NumericButton {
     Zero,
     One,
     Two,
@@ -17,7 +17,7 @@ enum NumericButton {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum DirectionalButton {
+pub enum DirectionalButton {
     Up,
     Right,
     Down,
@@ -62,24 +62,6 @@ impl From<usize> for NumericButton {
         }
     }
 }
-
-// impl From<NumericButton> for usize {
-//     fn from(value: NumericButton) -> usize {
-//         match value {
-//             NumericButton::Zero => 0,
-//             NumericButton::One => 1,
-//             NumericButton::Two => 2,
-//             NumericButton::Three => 3,
-//             NumericButton::Four => 4,
-//             NumericButton::Five => 5,
-//             NumericButton::Six => 6,
-//             NumericButton::Seven => 7,
-//             NumericButton::Eight => 8,
-//             NumericButton::Nine => 9,
-//             NumericButton::Activate => 10,
-//         }
-//     }
-// }
 
 const NUMERIC_BUTTONS: [NumericButton; 11] = [
     NumericButton::Zero,
@@ -137,7 +119,7 @@ where
     }
     fn shortest_paths(&mut self, start: &T, end: &T) -> Vec<Vec<Direction>> {
         if start == end {
-            return Vec::new();
+            return vec![vec![]];
         }
         let start = self.find_button(start).unwrap();
         self.end = self.find_button(end).unwrap();
@@ -257,15 +239,6 @@ impl DirectionalButton {
     }
 }
 
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-// enum DirectionalButton {
-//     Up,
-//     Down,
-//     Left,
-//     Right,
-//     Activate,
-// }
-
 #[derive(Debug, PartialEq, Clone, Copy, Eq, PartialOrd, Ord)]
 enum Direction {
     Up,
@@ -299,7 +272,8 @@ impl Direction {
 
 #[derive(Debug)]
 struct Puzzle {
-    numbers: Vec<Vec<NumericButton>>,
+    numeric_sequences: Vec<Vec<NumericButton>>,
+    numbers: Vec<usize>,
     numeric_routes: BTreeMap<[NumericButton; 2], Vec<Vec<Direction>>>,
     directional_routes: BTreeMap<[DirectionalButton; 2], Vec<Vec<Direction>>>,
 }
@@ -308,38 +282,137 @@ impl FromStr for Puzzle {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let numbers = s
+        let numeric_sequences = s
             .lines()
             .map(|line| line.chars().map(|c| c.into()).collect())
+            .collect();
+        let numbers = s
+            .lines()
+            .map(|line| {
+                let len = line.len();
+                line[0..len - 1].parse::<usize>().unwrap()
+            })
             .collect();
         let numeric_routes = NumericButton::find_routes();
         let directional_routes = DirectionalButton::find_routes();
         Ok(Puzzle {
-            numbers,
+            numeric_sequences,
             numeric_routes,
             directional_routes,
+            numbers,
         })
     }
 }
 
+fn route_to_sequence(route: &[Direction]) -> Vec<DirectionalButton> {
+    let mut out = Vec::with_capacity(route.len() + 1);
+    route.iter().for_each(|&d| out.push(d.into()));
+    out.push(DirectionalButton::Activate);
+    out
+}
+
+impl Display for DirectionalButton {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DirectionalButton::Up => write!(f, "^"),
+            DirectionalButton::Right => write!(f, ">"),
+            DirectionalButton::Down => write!(f, "v"),
+            DirectionalButton::Left => write!(f, "<"),
+            DirectionalButton::Activate => write!(f, "A"),
+        }
+    }
+}
+impl Display for NumericButton {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            NumericButton::Zero => write!(f, "0"),
+            NumericButton::One => write!(f, "1"),
+            NumericButton::Two => write!(f, "2"),
+            NumericButton::Three => write!(f, "3"),
+            NumericButton::Four => write!(f, "4"),
+            NumericButton::Five => write!(f, "5"),
+            NumericButton::Six => write!(f, "6"),
+            NumericButton::Seven => write!(f, "7"),
+            NumericButton::Eight => write!(f, "8"),
+            NumericButton::Nine => write!(f, "9"),
+            NumericButton::Activate => write!(f, "A"),
+        }
+    }
+}
+pub fn print_directional_sequence(seq: &[DirectionalButton]) {
+    for button in seq {
+        print!("{}", button);
+    }
+    println!();
+}
+pub fn print_numeric_sequence(seq: &[NumericButton]) {
+    for button in seq {
+        print!("{}", button);
+    }
+    println!();
+}
+
 impl Puzzle {
     fn process(&mut self) -> usize {
-        for sequence in &self.numbers {
-            dbg!(&sequence);
-            dbg!(self.map_sequence(sequence));
-            break;
+        let mut out = 0;
+        for (sequence, number) in self.numeric_sequences.iter().zip(self.numbers.iter()) {
+            let shortest = self.map_sequence(sequence);
+            print_numeric_sequence(sequence);
+            print_directional_sequence(&shortest);
+            println!("{} * {}", number, shortest.len());
+            out += shortest.len() * number;
         }
-        0
+        out
     }
-    fn map_sequence(&self, sequence: &Vec<NumericButton>) -> Vec<DirectionalButton> {
+    fn map_sequence(&self, sequence: &[NumericButton]) -> Vec<DirectionalButton> {
         let mut pos = NumericButton::Activate;
         let mut out = Vec::new();
         for next_button in sequence {
-            dbg!(&[pos, *next_button]);
-            let routes = &self.numeric_routes[&[pos, *next_button]];
-            let mut route: Vec<DirectionalButton> = routes[0].iter().map(|x| (*x).into()).collect();
-            route.push(DirectionalButton::Activate);
-            out.append(&mut route);
+            let mut shortest_option: Option<Vec<DirectionalButton>> = None;
+            for route in &self.numeric_routes[&[pos, *next_button]] {
+                let seq = route_to_sequence(route);
+                let seq = self.shortest_sequence(&seq, 1);
+                if let Some(shortest) = &shortest_option {
+                    if seq.len() < shortest.len() {
+                        shortest_option = Some(seq);
+                    }
+                } else {
+                    shortest_option = Some(seq);
+                }
+            }
+            out.append(shortest_option.as_mut().unwrap());
+            pos = *next_button;
+        }
+        out
+    }
+    fn shortest_sequence(
+        &self,
+        sequence: &[DirectionalButton],
+        level: usize,
+    ) -> Vec<DirectionalButton> {
+        let mut pos = DirectionalButton::Activate;
+        let mut out = Vec::new();
+        for next_button in sequence {
+            if level == 0 {
+                // we can just return the first option
+                let route = &self.directional_routes[&[pos, *next_button]][0];
+                let mut seq = route_to_sequence(route);
+                out.append(&mut seq);
+            } else {
+                let mut shortest_option: Option<Vec<DirectionalButton>> = None;
+                for route in &self.directional_routes[&[pos, *next_button]] {
+                    let seq = route_to_sequence(route);
+                    let seq = self.shortest_sequence(&seq, level - 1);
+                    if let Some(shortest_seq) = &shortest_option {
+                        if seq.len() < shortest_seq.len() {
+                            shortest_option = Some(seq);
+                        }
+                    } else {
+                        shortest_option = Some(seq);
+                    }
+                }
+                out.append(shortest_option.as_mut().unwrap());
+            }
             pos = *next_button;
         }
         out
@@ -350,7 +423,7 @@ fn main() {
     let mut puzzle = include_str!("21.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process();
     println!("{out}");
-    // assert_eq!(out, );
+    assert_eq!(out, 231564);
 }
 
 #[cfg(test)]
@@ -374,5 +447,17 @@ mod tests {
     #[test]
     fn test_path_cache_directional_button() {
         dbg!(DirectionalButton::find_routes());
+    }
+    #[test]
+    fn test_shortest_seq() {
+        let expected = "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A";
+        let puzzle = include_str!("21_test.txt").parse::<Puzzle>().unwrap();
+        let out = puzzle.map_sequence(&puzzle.numeric_sequences[0]);
+        let out = out
+            .iter()
+            .map(|b| format!("{}", b))
+            .collect::<Vec<String>>()
+            .join("");
+        assert_eq!(out.len(), expected.len());
     }
 }
