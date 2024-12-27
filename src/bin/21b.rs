@@ -365,31 +365,29 @@ pub fn print_numeric_sequence(seq: &[NumericButton]) {
 }
 
 #[memoize]
-fn shortest_sequence(sequence: Vec<DirectionalButton>, level: usize) -> Vec<DirectionalButton> {
-    let mut pos = DirectionalButton::Activate;
-    let mut out = Vec::new();
-    for next_button in &sequence {
-        if level == 0 {
-            // we can just return the first option
-            let seq = &mut find_directional_routes(pos, *next_button)[0];
-            out.append(seq);
-        } else {
-            let mut shortest_option: Option<Vec<DirectionalButton>> = None;
-            for seq in &find_directional_routes(pos, *next_button) {
-                let seq = shortest_sequence(seq.to_vec(), level - 1);
-                if let Some(shortest_seq) = &shortest_option {
-                    if seq.len() < shortest_seq.len() {
-                        shortest_option = Some(seq);
-                    }
-                } else {
-                    shortest_option = Some(seq);
-                }
+fn shortest_sequence(start: DirectionalButton, end: DirectionalButton, level: usize) -> usize {
+    if level == 0 {
+        // we can just return the first option
+        find_directional_routes(start, end)[0].len()
+    } else {
+        let mut shortest_option: Option<usize> = None;
+        for seq in &find_directional_routes(start, end) {
+            let mut inner_pos = DirectionalButton::Activate;
+            let mut len = 0;
+            for &inner_button in seq {
+                len += shortest_sequence(inner_pos, inner_button, level - 1);
+                inner_pos = inner_button;
             }
-            out.append(shortest_option.as_mut().unwrap());
+            if let Some(shortest_seq) = &shortest_option {
+                if &len < shortest_seq {
+                    shortest_option = Some(len);
+                }
+            } else {
+                shortest_option = Some(len);
+            }
         }
-        pos = *next_button;
+        shortest_option.unwrap()
     }
-    out
 }
 
 impl Puzzle {
@@ -397,30 +395,33 @@ impl Puzzle {
         let mut out = 0;
         for (sequence, number) in self.numeric_sequences.iter().zip(self.numbers.iter()) {
             let shortest = self.map_sequence(sequence, levels);
-            // print_numeric_sequence(sequence);
-            // print_directional_sequence(&shortest);
-            println!("{} * {}", number, shortest.len());
-            out += shortest.len() * number;
+            println!("{} * {}", number, shortest);
+            out += shortest * number;
         }
         out
     }
-    fn map_sequence(&self, sequence: &[NumericButton], levels: usize) -> Vec<DirectionalButton> {
+    fn map_sequence(&self, sequence: &[NumericButton], levels: usize) -> usize {
         let mut pos = NumericButton::Activate;
-        let mut out = Vec::new();
+        let mut out = 0;
         for next_button in sequence {
-            let mut shortest_option: Option<Vec<DirectionalButton>> = None;
+            let mut shortest_option: Option<usize> = None;
             for route in &self.numeric_routes[&[pos, *next_button]] {
                 let seq = route_to_sequence(route);
-                let seq = shortest_sequence(seq.to_vec(), levels - 1);
+                let mut inner_pos = DirectionalButton::Activate;
+                let mut len = 0;
+                for inner_button in seq {
+                    len += shortest_sequence(inner_pos, inner_button, levels - 1);
+                    inner_pos = inner_button;
+                }
                 if let Some(shortest) = &shortest_option {
-                    if seq.len() < shortest.len() {
-                        shortest_option = Some(seq);
+                    if &len < shortest {
+                        shortest_option = Some(len);
                     }
                 } else {
-                    shortest_option = Some(seq);
+                    shortest_option = Some(len);
                 }
             }
-            out.append(shortest_option.as_mut().unwrap());
+            out += shortest_option.unwrap();
             pos = *next_button;
         }
         out
@@ -431,7 +432,7 @@ fn main() {
     let mut puzzle = include_str!("21.txt").parse::<Puzzle>().unwrap();
     let out = puzzle.process(25);
     println!("{out}");
-    // assert_eq!(out, 231564);
+    assert_eq!(out, 281212077733592);
 }
 
 #[cfg(test)]
