@@ -3,13 +3,28 @@ x00 XOR y00 -> z00
 y00 AND x00 -> whb // 00 Carry
 
 x01 XOR y01 -> jjd
-x01 AND y01 -> bdf
-
+x01 AND y01 -> bdf // 01 carry
+jjd AND whb -> wbw
+bdf OR wbw -> qkf
 jjd XOR whb -> z01
 
+x02 XOR y02 -> wsv
+x02 AND y02 -> vdf // 02 carry
+qkf AND wsv -> pqc
+qkf XOR wsv -> z02
+
+y03 XOR x03 -> bcj
 x03 AND y03 -> htr
-gwb AND kvf -> pkd
+bkh AND bcj -> rhq
+htr OR rhq -> rjc
+pqc OR vdf -> bkh
+bcj XOR bkh -> z03
+
+x04 XOR y04 -> cjb
 x04 AND y04 -> jjm
+cjb XOR rjc -> z04
+
+gwb AND kvf -> pkd
 qcm XOR twv -> z21
 rrq XOR bmp -> z44
 x43 AND y43 -> pnn
@@ -45,15 +60,12 @@ y16 XOR x16 -> svs
 y14 XOR x14 -> fnq
 wth OR vjf -> btv
 bvp AND gdb -> stc
-cjb XOR rjc -> z04
 x13 AND y13 -> pfb
 x30 AND y30 -> qgf
 htq AND rtk -> dsm
 x18 XOR y18 -> kvf
 y12 AND x12 -> mqn
-bcj XOR bkh -> z03
 x07 AND y07 -> sdj
-bdf OR wbw -> qkf
 y30 XOR x30 -> kbn
 tpf AND vhb -> tpp
 hqd OR fpr -> hgh
@@ -81,10 +93,8 @@ ksn AND nft -> z12
 chc AND rnq -> vjh
 y36 AND x36 -> kfn
 cwh OR vvw -> ttb
-qkf AND wsv -> pqc
 rdj OR kfv -> gdb
 x08 AND y08 -> jrr
-x02 AND y02 -> vdf
 x12 XOR y12 -> nft
 ptf OR jrr -> sqm
 tdv OR wjp -> cjw
@@ -115,7 +125,6 @@ nbq XOR cmt -> z39
 wgq AND dqj -> tws
 x24 AND y24 -> sqt
 whj OR pnn -> bmp
-x02 XOR y02 -> wsv
 stg AND qpp -> dnf
 kbn XOR jvp -> z30
 y39 AND x39 -> gwq
@@ -126,9 +135,7 @@ bqh XOR rjf -> z19
 hck XOR cvr -> z37
 jmk OR ssv -> rkv
 x21 AND y21 -> cgd
-pqc OR vdf -> bkh
 rff OR mts -> rpg
-bkh AND bcj -> rhq
 bnv OR bst -> stg
 bwg XOR mfn -> z13
 sgt AND scc -> bnv
@@ -143,7 +150,6 @@ mdv OR rft -> rnq
 fqf AND chv -> cwh
 y28 AND x28 -> wjp
 sch AND srj -> whj
-htr OR rhq -> rjc
 x05 XOR y05 -> dqp
 cvn OR qnk -> cjg
 y14 AND x14 -> tfr
@@ -161,7 +167,6 @@ x22 AND y22 -> prp
 ppb XOR hmr -> z15
 y18 AND x18 -> jkm
 x39 XOR y39 -> nbq
-jjd AND whb -> wbw
 x34 XOR y34 -> vvw
 x19 AND y19 -> wqs
 gwq OR gmc -> sgt
@@ -202,12 +207,9 @@ y19 XOR x19 -> bqh
 rjf AND bqh -> cmf
 y38 XOR x38 -> jsg
 x32 XOR y32 -> kkd
-y03 XOR x03 -> bcj
 y31 XOR x31 -> svg
 y22 XOR x22 -> wgq
-qkf XOR wsv -> z02
 bvp XOR gdb -> kgj
-x04 XOR y04 -> cjb
 x17 XOR y17 -> ffj
 y37 AND x37 -> dsg
 y27 AND x27 -> wth
