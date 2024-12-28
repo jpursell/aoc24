@@ -1,228 +1,290 @@
+y00 AND x00 -> whb // carry_00
+x00 XOR y00 -> z00 // sum_00
 
-x00 XOR y00 -> z00
-y00 AND x00 -> whb // 00 Carry
+x01 AND y01 -> bdf // carry_right_01
+x01 XOR y01 -> jjd // pre_sum_01
+jjd XOR whb -> z01 // sum_01
+jjd AND whb -> wbw // carry_left_01
+bdf OR wbw -> qkf // carry_01
 
-x01 XOR y01 -> jjd
-x01 AND y01 -> bdf // 01 carry
-jjd AND whb -> wbw
-bdf OR wbw -> qkf
-jjd XOR whb -> z01
+x02 AND y02 -> vdf // carry_right_02
+x02 XOR y02 -> wsv // pre_sum_02
+qkf AND wsv -> pqc // carry_left_02
+qkf XOR wsv -> z02 // sum_02
+pqc OR vdf -> bkh // carry_02
 
-x02 XOR y02 -> wsv
-x02 AND y02 -> vdf // 02 carry
-qkf AND wsv -> pqc
-qkf XOR wsv -> z02
+x03 AND y03 -> htr // carry_right_03
+y03 XOR x03 -> bcj // pre_sum_03
+bcj XOR bkh -> z03 // sum_03
+bkh AND bcj -> rhq // carry_left_03
+htr OR rhq -> rjc // carry_03
 
-y03 XOR x03 -> bcj
-x03 AND y03 -> htr
-bkh AND bcj -> rhq
-htr OR rhq -> rjc
-pqc OR vdf -> bkh
-bcj XOR bkh -> z03
+x04 AND y04 -> jjm // carry_right_04
+x04 XOR y04 -> cjb // pre_sum_04
+cjb XOR rjc -> z04 // sum_04
+cjb AND rjc -> fsb // carry_left_04
+jjm OR fsb -> nbm // carry_04
 
-x04 XOR y04 -> cjb
-x04 AND y04 -> jjm
-cjb XOR rjc -> z04
+x05 XOR y05 -> dqp // pre_sum_05
+y05 AND x05 -> gtb // carry_right_05
+dqp AND nbm -> hvv // carry_left_05
+nbm XOR dqp -> z05 // sum_05
+gtb OR hvv -> gtn // carry_05
 
-gwb AND kvf -> pkd
-qcm XOR twv -> z21
+x06 XOR y06 -> qmt // pre_sum_06
+x06 AND y06 -> ssv // carry_right_06
+gtn XOR qmt -> z06 // sum_06
+gtn AND qmt -> jmk // carry_left_06
+jmk OR ssv -> rkv // carry_06
+
+x07 XOR y07 -> cds // pre_sum_07
+x07 AND y07 -> sdj // carry_right_07
+cds AND rkv -> nph // carry_left_07
+cds XOR rkv -> z07 // sum_07
+sdj OR nph -> rts // carry_07
+
+x08 AND y08 -> jrr // carry_right_08
+x08 XOR y08 -> hmv // pre_sum_08
+hmv XOR rts -> z08 // sum_08
+rts AND hmv -> ptf // carry_left_08
+ptf OR jrr -> sqm // carry_08
+
+x09 AND y09 -> nvw // carry_right_09
+y09 XOR x09 -> mtg // pre_sum_09
+mtg XOR sqm -> z09 // sum_09
+mtg AND sqm -> chg // carry_left_09
+nvw OR chg -> vgp // carry_09
+
+x10 AND y10 -> bfm // carry_right_10
+y10 XOR x10 -> vpc // pre_sum_10
+vpc XOR vgp -> z10 // sum_10
+vgp AND vpc -> qht // carry_left_10
+qht OR bfm -> htq // carry_10
+
+y11 AND x11 -> smr // carry_right_11
+y11 XOR x11 -> rtk // pre_sum_11
+htq AND rtk -> dsm // carry_left_11
+rtk XOR htq -> z11 // sum_11
+smr OR dsm -> ksn // carry_11
+
+y12 AND x12 -> mqn // carry_right_12
+x12 XOR y12 -> nft // pre_sum_12
+ksn AND nft -> jpj // carry_left_12
+ksn XOR nft -> z12 // sum_12
+mqn OR jpj -> bwg // carry_12
+
+x13 AND y13 -> pfb // carry_right_13
+y13 XOR x13 -> mfn // pre_sum_13
+bwg AND mfn -> djp // carry_left_13
+bwg XOR mfn -> z13 // sum_13
+djp OR pfb -> qvr // carry_13
+
+y14 XOR x14 -> fnq // pre_sum_14
+y14 AND x14 -> tfr // carry_right_14
+qvr XOR fnq -> z14 // sum_14
+qvr AND fnq -> mch // carry_left_14
+mch OR tfr -> ppb // carry_14
+
+y15 XOR x15 -> hmr // pre_sum_15
+x15 AND y15 -> fpr // carry_right_15
+ppb AND hmr -> hqd // carry_left_15
+ppb XOR hmr -> z15 // sum_15
+hqd OR fpr -> hgh // carry_15
+
+y16 XOR x16 -> svs // pre_sum_16
+x16 AND y16 -> mts // carry_right_16
+svs AND hgh -> rff // carry_left_16
+svs XOR hgh -> z16 // sum_16
+rff OR mts -> rpg // carry_16
+
+y17 AND x17 -> jvm // carry_right_17
+x17 XOR y17 -> ffj // pre_sum_17
+ffj XOR rpg -> z17 // sum_17
+ffj AND rpg -> bfk // carry_left_17
+bfk OR jvm -> gwb // carry_17
+
+x18 XOR y18 -> kvf // pre_sum_18
+y18 AND x18 -> jkm // carry_right_18
+gwb AND kvf -> pkd // carry_left_18
+kvf XOR gwb -> z18 // sum_18
+jkm OR pkd -> rjf // carry_18
+
+x19 AND y19 -> wqs // carry_right_19
+y19 XOR x19 -> bqh // pre_sum_19
+bqh XOR rjf -> z19 // sum_19
+rjf AND bqh -> cmf // carry_left_19
+wqs OR cmf -> tpf // carry_19
+
+x20 XOR y20 -> vhb // pre_sum_20
+x20 AND y20 -> pfj // carry_right_20
+tpf AND vhb -> tpp // carry_left_20
+tpf XOR vhb -> z20 // sum_20
+tpp OR pfj -> twv // carry_20
+
+x21 XOR y21 -> qcm // pre_sum_21
+x21 AND y21 -> cgd // carry_right_21
+qcm XOR twv -> z21 // sum_21
+qcm AND twv -> jth // carry_left_21
+cgd OR jth -> dqj // carry_21
+
+x22 AND y22 -> prp // carry_right_22
+y22 XOR x22 -> wgq // pre_sum_22
+wgq AND dqj -> tws // carry_left_22
+wgq XOR dqj -> z22 // sum_22
+tws OR prp -> hbw // carry_22
+
+x23 AND y23 -> vjr // carry_right_23
+y23 XOR x23 -> vfm // pre_sum_23
+vfm XOR hbw -> z23 // sum_23
+hbw AND vfm -> kwg // carry_left_23
+vjr OR kwg -> pkr // carry_23
+
+x24 AND y24 -> sqt // carry_right_24
+x24 XOR y24 -> kcv // pre_sum_24
+pkr AND kcv -> thc // carry_left_24
+kcv XOR pkr -> z24 // sum_24
+thc OR sqt -> rbd // carry_24
+
+y25 AND x25 -> kfv // carry_right_25
+x25 XOR y25 -> knm // pre_sum_25
+rbd XOR knm -> z25 // sum_25
+rbd AND knm -> rdj // carry_left_25
+rdj OR kfv -> gdb // carry_25
+
+x26 AND y26 -> kgj // carry_right_26
+x26 XOR y26 -> bvp // pre_sum_26
+bvp AND gdb -> stc // carry_left_26
+bvp XOR gdb -> z26 // sum_26
+kgj OR stc -> www // carry_26
+
+y27 AND x27 -> wth // carry_right_27
+y27 XOR x27 -> qdf // pre_sum_27
+www AND qdf -> vjf // carry_left_27
+www XOR qdf -> z27 // sum_27
+wth OR vjf -> btv // carry_27
+
+x28 XOR y28 -> cfj // pre_sum_28
+y28 AND x28 -> wjp // carry_right_28
+btv XOR cfj -> z28 // sum_28
+btv AND cfj -> tdv // carry_left_28
+tdv OR wjp -> cjw // carry_28
+
+x29 AND y29 -> vvq // carry_right_29
+x29 XOR y29 -> ntj // pre_sum_29
+cjw AND ntj -> dtj // carry_left_29
+ntj XOR cjw -> z29 // sum_29
+dtj OR vvq -> jvp // carry_29
+
+x30 AND y30 -> qgf // carry_right_30
+y30 XOR x30 -> kbn // pre_sum_30
+kbn XOR jvp -> z30 // sum_30
+jvp AND kbn -> gtq // carry_left_30
+gtq OR qgf -> fmt // carry_30
+
+x31 AND y31 -> cvn // carry_right_31
+y31 XOR x31 -> svg // pre_sum_31
+svg XOR fmt -> z31 // sum_31
+svg AND fmt -> qnk // carry_left_31
+cvn OR qnk -> cjg // carry_31
+
+x32 AND y32 -> rft // carry_right_32
+x32 XOR y32 -> kkd // pre_sum_32
+kkd XOR cjg -> z32 // sum_32
+kkd AND cjg -> mdv // carry_left_32
+mdv OR rft -> rnq // carry_32
+
+y33 AND x33 -> mmb // carry_right_33
+x33 XOR y33 -> chc // pre_sum_33
+chc AND rnq -> vjh // carry_left_33
+chc XOR rnq -> z33 // sum_33
+mmb OR vjh -> fqf // carry_33
+
+y34 AND x34 -> chv // carry_right_34
+x34 XOR y34 -> vvw // pre_sum_34
+### Problem detected with gate: cwh OR vvw -> ttb
 rrq XOR bmp -> z44
 x43 AND y43 -> pnn
-x06 XOR y06 -> qmt
-x26 AND y26 -> z26
 jfq XOR fbb -> z36
-y33 AND x33 -> mmb
 x38 AND y38 -> vqt
 bbh OR qtd -> jfq
 cbs AND ttb -> qtd
-wqs OR cmf -> tpf
-x10 AND y10 -> bfm
-djp OR pfb -> qvr
-x20 XOR y20 -> vhb
-kkd XOR cjg -> z32
 qpp XOR stg -> z41
-kkd AND cjg -> mdv
-tpp OR pfj -> twv
-www AND qdf -> vjf
-y15 XOR x15 -> hmr
-mtg XOR sqm -> z09
-x33 XOR y33 -> chc
 x41 AND y41 -> pkj
-x31 AND y31 -> cvn
-x09 AND y09 -> nvw
-mtg AND sqm -> chg
-pkr AND kcv -> thc
-x07 XOR y07 -> cds
-x15 AND y15 -> fpr
 mwv AND jsg -> wdw
 mwv XOR jsg -> z38
-y16 XOR x16 -> svs
-y14 XOR x14 -> fnq
-wth OR vjf -> btv
-bvp AND gdb -> stc
-x13 AND y13 -> pfb
-x30 AND y30 -> qgf
-htq AND rtk -> dsm
-x18 XOR y18 -> kvf
-y12 AND x12 -> mqn
-x07 AND y07 -> sdj
-y30 XOR x30 -> kbn
-tpf AND vhb -> tpp
-hqd OR fpr -> hgh
-vfm XOR hbw -> z23
-nvw OR chg -> vgp
-x21 XOR y21 -> qcm
-bwg AND mfn -> djp
 dnf OR pkj -> ksp
 y44 AND x44 -> gqr
-y11 AND x11 -> smr
-smr OR dsm -> ksn
-jkm OR pkd -> rjf
-thc OR sqt -> rbd
-qvr XOR fnq -> z14
-cjb AND rjc -> fsb
-svg XOR fmt -> z31
-x06 AND y06 -> ssv
-dtj OR vvq -> jvp
 chv XOR fqf -> z34
 cvr AND hck -> pjd
-dqp AND nbm -> hvv
-x29 AND y29 -> vvq
-y13 XOR x13 -> mfn
-ksn AND nft -> z12
-chc AND rnq -> vjh
 y36 AND x36 -> kfn
 cwh OR vvw -> ttb
-rdj OR kfv -> gdb
-x08 AND y08 -> jrr
-x12 XOR y12 -> nft
-ptf OR jrr -> sqm
-tdv OR wjp -> cjw
-qvr AND fnq -> mch
-x28 XOR y28 -> cfj
-gtn XOR qmt -> z06
-mqn OR jpj -> bwg
 x36 XOR y36 -> fbb
-qht OR bfm -> htq
 y42 AND x42 -> mkg
-ksn XOR nft -> jpj
-x20 AND y20 -> pfj
 cmt AND nbq -> gmc
-rbd XOR knm -> z25
 pvj XOR ksp -> z42
-kgj OR stc -> www
-tpf XOR vhb -> z20
 pjd OR dsg -> mwv
 cbs XOR ttb -> z35
-bfk OR jvm -> gwb
-ffj XOR rpg -> z17
-vjr OR kwg -> pkr
 pvj AND ksp -> dkc
 y37 XOR x37 -> cvr
-btv XOR cfj -> z28
-gtq OR qgf -> fmt
 nbq XOR cmt -> z39
-wgq AND dqj -> tws
-x24 AND y24 -> sqt
 whj OR pnn -> bmp
 stg AND qpp -> dnf
-kbn XOR jvp -> z30
 y39 AND x39 -> gwq
-cds AND rkv -> nph
-kvf XOR gwb -> z18
 mkg OR dkc -> sch
-bqh XOR rjf -> z19
 hck XOR cvr -> z37
-jmk OR ssv -> rkv
-x21 AND y21 -> cgd
-rff OR mts -> rpg
 bnv OR bst -> stg
-bwg XOR mfn -> z13
 sgt AND scc -> bnv
-btv AND cfj -> tdv
-svs AND hgh -> rff
-hbw AND vfm -> kwg
 x40 XOR y40 -> scc
-y17 AND x17 -> jvm
-y34 AND x34 -> chv
 y35 AND x35 -> bbh
-mdv OR rft -> rnq
 fqf AND chv -> cwh
-y28 AND x28 -> wjp
 sch AND srj -> whj
-x05 XOR y05 -> dqp
-cvn OR qnk -> cjg
-y14 AND x14 -> tfr
-y11 XOR x11 -> rtk
 jfq AND fbb -> trr
-ppb AND hmr -> hqd
-gtb OR hvv -> gtn
 y44 XOR x44 -> rrq
-rtk XOR htq -> z11
-hmv XOR rts -> z08
-y10 XOR x10 -> vpc
-jvp AND kbn -> gtq
-cjw AND ntj -> dtj
-x22 AND y22 -> prp
-ppb XOR hmr -> z15
-y18 AND x18 -> jkm
 x39 XOR y39 -> nbq
-x34 XOR y34 -> vvw
-x19 AND y19 -> wqs
 gwq OR gmc -> sgt
-rbd AND knm -> rdj
 srj XOR sch -> z43
-y05 AND x05 -> gtb
-x08 XOR y08 -> hmv
-y25 AND x25 -> kfv
-cgd OR jth -> dqj
-vpc XOR vgp -> z10
-tws OR prp -> hbw
-jjm OR fsb -> nbm
 wdw OR vqt -> cmt
 rrq AND bmp -> cbv
-rts AND hmv -> ptf
-svs XOR hgh -> z16
 y41 XOR x41 -> qpp
-ntj XOR cjw -> z29
-ffj AND rpg -> bfk
 gqr OR cbv -> z45
-x25 XOR y25 -> knm
-chc XOR rnq -> z33
 y43 XOR x43 -> srj
-vgp AND vpc -> qht
-cds XOR rkv -> rts
-x24 XOR y24 -> kcv
-x32 AND y32 -> rft
-nbm XOR dqp -> z05
 x35 XOR y35 -> cbs
-mch OR tfr -> ppb
-x16 AND y16 -> mts
-www XOR qdf -> z27
-x23 AND y23 -> vjr
-x26 XOR y26 -> bvp
-gtn AND qmt -> jmk
-x29 XOR y29 -> ntj
-y19 XOR x19 -> bqh
-rjf AND bqh -> cmf
 y38 XOR x38 -> jsg
-x32 XOR y32 -> kkd
-y31 XOR x31 -> svg
-y22 XOR x22 -> wgq
-bvp XOR gdb -> kgj
-x17 XOR y17 -> ffj
 y37 AND x37 -> dsg
-y27 AND x27 -> wth
-y23 XOR x23 -> vfm
 sgt XOR scc -> z40
-mmb OR vjh -> fqf
-qcm AND twv -> jth
-y09 XOR x09 -> mtg
-sdj OR nph -> z07
-wgq XOR dqj -> z22
 trr OR kfn -> hck
-y27 XOR x27 -> qdf
-kcv XOR pkr -> z24
 x42 XOR y42 -> pvj
 x40 AND y40 -> bst
-svg AND fmt -> qnk
+thread 'tests::show_gates_in_order' panicked at src\bin\24b.rs:294:25:
+explicit panic
+stack backtrace:
+   0: std::panicking::begin_panic_handler
+             at /rustc/90b35a6239c3d8bdabc530a6a0816f7ff89a0aaf\library/std\src\panicking.rs:665
+   1: core::panicking::panic_fmt
+             at /rustc/90b35a6239c3d8bdabc530a6a0816f7ff89a0aaf\library/core\src\panicking.rs:74
+   2: core::panicking::panic_display
+             at /rustc/90b35a6239c3d8bdabc530a6a0816f7ff89a0aaf\library/core\src\panicking.rs:264
+   3: core::panicking::panic_explicit
+             at /rustc/90b35a6239c3d8bdabc530a6a0816f7ff89a0aaf\library/core\src\panicking.rs:237
+   4: 24b::tests::show_gates_in_order::panic_cold_explicit
+             at C:\Users\jpurs\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\panic.rs:88
+   5: 24b::tests::show_gates_in_order
+             at .\src\bin\24b.rs:294
+   6: 24b::tests::show_gates_in_order::closure$0
+             at .\src\bin\24b.rs:200
+   7: core::ops::function::FnOnce::call_once<24b::tests::show_gates_in_order::closure_env$0,tuple$<> >
+             at C:\Users\jpurs\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\src\rust\library\core\src\ops\function.rs:250
+   8: core::ops::function::FnOnce::call_once
+             at /rustc/90b35a6239c3d8bdabc530a6a0816f7ff89a0aaf\library/core\src\ops\function.rs:250
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+
+
+failures:
+    tests::show_gates_in_order
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.04s
+
+error: test failed, to rerun pass `-p aoc24 --bin 24b`
+
+ *  The terminal process "C:\Users\jpurs\.cargo\bin\cargo.exe 'test', '--package', 'aoc24', '--bin', '24b', '--', 'tests::show_gates_in_order', '--exact', '--show-output'" terminated with exit code: 101. 
+ *  Terminal will be reused by tasks, press any key to close it. 
